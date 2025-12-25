@@ -1,4 +1,5 @@
 import { Maximize, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import Link from 'next/link';
 import type { Property } from '@/data/properties';
 
 interface PlotCardProps {
@@ -16,11 +17,11 @@ export default function PlotCard({ property }: PlotCardProps) {
   };
 
   return (
-    <div className="group flex-shrink-0 w-80 bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow">
+    <Link href={`/propiedad/${property.id}`} className="group flex-shrink-0 w-80 bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
-          src={property.image}
+          src={property.images[0]}
           alt={property.title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
@@ -84,6 +85,6 @@ export default function PlotCard({ property }: PlotCardProps) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
