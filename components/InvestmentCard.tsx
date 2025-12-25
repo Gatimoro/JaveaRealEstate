@@ -1,4 +1,5 @@
 import { Bed, Bath, Maximize, MapPin, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import type { Property } from '@/data/properties';
 
 interface InvestmentCardProps {
@@ -16,11 +17,11 @@ export default function InvestmentCard({ property }: InvestmentCardProps) {
   };
 
   return (
-    <div className="group flex-shrink-0 w-80 bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow">
+    <Link href={`/propiedad/${property.id}`} className="group flex-shrink-0 w-80 bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
-          src={property.image}
+          src={property.images[0]}
           alt={property.title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
@@ -74,6 +75,6 @@ export default function InvestmentCard({ property }: InvestmentCardProps) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
