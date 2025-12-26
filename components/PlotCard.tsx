@@ -1,14 +1,27 @@
+'use client';
+
 import { Maximize, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
+import { useLanguage, getLocalizedField } from '@/lib/i18n';
 
 interface PlotCardProps {
   property: Property;
 }
 
 export default function PlotCard({ property }: PlotCardProps) {
+  const { locale } = useLanguage();
+
+  const translations = {
+    es: { size: 'Tamaño:', buildable: 'Edificable:', zone: 'Zona:', yes: 'Sí', no: 'No' },
+    en: { size: 'Size:', buildable: 'Buildable:', zone: 'Zone:', yes: 'Yes', no: 'No' },
+    ru: { size: 'Размер:', buildable: 'Застройка:', zone: 'Зона:', yes: 'Да', no: 'Нет' },
+  };
+
+  const t = translations[locale];
+
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
@@ -16,13 +29,15 @@ export default function PlotCard({ property }: PlotCardProps) {
     }).format(price);
   };
 
+  const title = getLocalizedField(property, 'title', locale) || property.title;
+
   return (
     <Link href={`/propiedad/${property.id}`} className="group flex-shrink-0 w-full min-w-[280px] max-w-[320px] bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
           src={property.images[0]}
-          alt={property.title}
+          alt={title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
         {property.badge && (
@@ -40,7 +55,7 @@ export default function PlotCard({ property }: PlotCardProps) {
         </div>
 
         {/* Title */}
-        <h3 className="text-lg font-semibold line-clamp-1">{property.title}</h3>
+        <h3 className="text-lg font-semibold line-clamp-1">{title}</h3>
 
         {/* Location */}
         <div className="flex items-center text-muted text-sm">
@@ -53,24 +68,24 @@ export default function PlotCard({ property }: PlotCardProps) {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted flex items-center gap-1">
               <Maximize className="w-4 h-4" />
-              Tamaño:
+              {t.size}
             </span>
             <span className="font-semibold">{property.specs.size}m²</span>
           </div>
 
           {property.specs.buildable !== undefined && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted">Edificable:</span>
+              <span className="text-muted">{t.buildable}</span>
               <span className="flex items-center gap-1">
                 {property.specs.buildable ? (
                   <>
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-green-500">Sí</span>
+                    <span className="text-green-500">{t.yes}</span>
                   </>
                 ) : (
                   <>
                     <XCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-red-500">No</span>
+                    <span className="text-red-500">{t.no}</span>
                   </>
                 )}
               </span>
@@ -79,7 +94,7 @@ export default function PlotCard({ property }: PlotCardProps) {
 
           {property.specs.zone && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted">Zona:</span>
+              <span className="text-muted">{t.zone}</span>
               <span className="font-semibold">{property.specs.zone}</span>
             </div>
           )}

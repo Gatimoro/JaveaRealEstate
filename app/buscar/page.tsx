@@ -10,11 +10,90 @@ import PlotCard from '@/components/PlotCard';
 import type { Property } from '@/data/properties';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useLanguage, getLocalizedField } from '@/lib/i18n';
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const typeParam = searchParams.get('type') || 'all';
+  const { locale } = useLanguage();
+
+  const translations = {
+    es: {
+      resultsFor: 'Resultados para',
+      allProperties: 'Todas las propiedades',
+      propertyFound: 'propiedad encontrada',
+      propertiesFound: 'propiedades encontradas',
+      filters: 'Filtros',
+      clear: 'Limpiar',
+      propertyType: 'Tipo de propiedad',
+      all: 'Todas',
+      housesApartments: 'Casas y Pisos',
+      investments: 'Inversiones',
+      plots: 'Parcelas',
+      price: 'Precio',
+      minPrice: 'Mín €',
+      maxPrice: 'Máx €',
+      minBedrooms: 'Habitaciones (mínimo)',
+      minBathrooms: 'Baños (mínimo)',
+      minSize: 'Tamaño mínimo (m²)',
+      any: 'Cualquiera',
+      sizePlaceholder: 'm²',
+      noResults: 'No se encontraron propiedades',
+      clearFilters: 'Limpiar filtros',
+      loading: 'Cargando...',
+    },
+    en: {
+      resultsFor: 'Results for',
+      allProperties: 'All properties',
+      propertyFound: 'property found',
+      propertiesFound: 'properties found',
+      filters: 'Filters',
+      clear: 'Clear',
+      propertyType: 'Property type',
+      all: 'All',
+      housesApartments: 'Houses & Apartments',
+      investments: 'Investments',
+      plots: 'Land Plots',
+      price: 'Price',
+      minPrice: 'Min €',
+      maxPrice: 'Max €',
+      minBedrooms: 'Bedrooms (minimum)',
+      minBathrooms: 'Bathrooms (minimum)',
+      minSize: 'Minimum size (m²)',
+      any: 'Any',
+      sizePlaceholder: 'm²',
+      noResults: 'No properties found',
+      clearFilters: 'Clear filters',
+      loading: 'Loading...',
+    },
+    ru: {
+      resultsFor: 'Результаты для',
+      allProperties: 'Вся недвижимость',
+      propertyFound: 'объект найден',
+      propertiesFound: 'объектов найдено',
+      filters: 'Фильтры',
+      clear: 'Очистить',
+      propertyType: 'Тип недвижимости',
+      all: 'Все',
+      housesApartments: 'Дома и квартиры',
+      investments: 'Инвестиции',
+      plots: 'Участки',
+      price: 'Цена',
+      minPrice: 'Мин €',
+      maxPrice: 'Макс €',
+      minBedrooms: 'Спален (минимум)',
+      minBathrooms: 'Ванных (минимум)',
+      minSize: 'Минимальный размер (м²)',
+      any: 'Любой',
+      sizePlaceholder: 'м²',
+      noResults: 'Недвижимость не найдена',
+      clearFilters: 'Очистить фильтры',
+      loading: 'Загрузка...',
+    },
+  };
+
+  const t = translations[locale];
 
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -28,12 +107,14 @@ function SearchContent() {
 
   const filteredProperties = useMemo(() => {
     return allProperties.filter((property) => {
-      // Search query filter
+      // Search query filter - check localized fields
+      const title = getLocalizedField(property, 'title', locale) || property.title;
+      const description = getLocalizedField(property, 'description', locale) || property.description;
       const matchesQuery =
         query === '' ||
-        property.title.toLowerCase().includes(query.toLowerCase()) ||
+        title.toLowerCase().includes(query.toLowerCase()) ||
         property.location.toLowerCase().includes(query.toLowerCase()) ||
-        property.description?.toLowerCase().includes(query.toLowerCase());
+        description?.toLowerCase().includes(query.toLowerCase());
 
       // Price filters
       const matchesMinPrice =
@@ -100,10 +181,10 @@ function SearchContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">
-            {query ? `Resultados para "${query}"` : 'Todas las propiedades'}
+            {query ? `${t.resultsFor} "${query}"` : t.allProperties}
           </h1>
           <p className="text-muted">
-            {filteredProperties.length} {filteredProperties.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}
+            {filteredProperties.length} {filteredProperties.length === 1 ? t.propertyFound : t.propertiesFound}
           </p>
         </div>
 
@@ -117,50 +198,50 @@ function SearchContent() {
                 className="lg:hidden w-full flex items-center justify-center gap-2 px-4 py-3 bg-card border border-border rounded-lg mb-4 hover:border-primary transition-colors"
               >
                 <SlidersHorizontal className="w-5 h-5" />
-                <span>Filtros</span>
+                <span>{t.filters}</span>
               </button>
 
               {/* Filters Panel */}
               <div className={`bg-card border border-border rounded-xl p-6 space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">Filtros</h2>
+                  <h2 className="text-xl font-bold">{t.filters}</h2>
                   <button
                     onClick={clearFilters}
                     className="text-sm text-primary hover:text-orange-400 transition-colors"
                   >
-                    Limpiar
+                    {t.clear}
                   </button>
                 </div>
 
                 {/* Type Filter */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Tipo de propiedad</label>
+                  <label className="block text-sm font-semibold mb-2">{t.propertyType}</label>
                   <select
                     value={filters.type}
                     onChange={(e) => setFilters({ ...filters, type: e.target.value })}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="all">Todas</option>
-                    <option value="house">Casas y Pisos</option>
-                    <option value="investment">Inversiones</option>
-                    <option value="plot">Parcelas</option>
+                    <option value="all">{t.all}</option>
+                    <option value="house">{t.housesApartments}</option>
+                    <option value="investment">{t.investments}</option>
+                    <option value="plot">{t.plots}</option>
                   </select>
                 </div>
 
                 {/* Price Range */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Precio</label>
+                  <label className="block text-sm font-semibold mb-2">{t.price}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
-                      placeholder="Mín €"
+                      placeholder={t.minPrice}
                       value={filters.minPrice}
                       onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
                       className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <input
                       type="number"
-                      placeholder="Máx €"
+                      placeholder={t.maxPrice}
                       value={filters.maxPrice}
                       onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
                       className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -170,13 +251,13 @@ function SearchContent() {
 
                 {/* Bedrooms */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Habitaciones (mínimo)</label>
+                  <label className="block text-sm font-semibold mb-2">{t.minBedrooms}</label>
                   <select
                     value={filters.bedrooms}
                     onChange={(e) => setFilters({ ...filters, bedrooms: e.target.value })}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">Cualquiera</option>
+                    <option value="">{t.any}</option>
                     <option value="1">1+</option>
                     <option value="2">2+</option>
                     <option value="3">3+</option>
@@ -187,13 +268,13 @@ function SearchContent() {
 
                 {/* Bathrooms */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Baños (mínimo)</label>
+                  <label className="block text-sm font-semibold mb-2">{t.minBathrooms}</label>
                   <select
                     value={filters.bathrooms}
                     onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">Cualquiera</option>
+                    <option value="">{t.any}</option>
                     <option value="1">1+</option>
                     <option value="2">2+</option>
                     <option value="3">3+</option>
@@ -203,10 +284,10 @@ function SearchContent() {
 
                 {/* Size */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Tamaño mínimo (m²)</label>
+                  <label className="block text-sm font-semibold mb-2">{t.minSize}</label>
                   <input
                     type="number"
-                    placeholder="m²"
+                    placeholder={t.sizePlaceholder}
                     value={filters.minSize}
                     onChange={(e) => setFilters({ ...filters, minSize: e.target.value })}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -228,12 +309,12 @@ function SearchContent() {
               </div>
             ) : (
               <div className="text-center py-16">
-                <p className="text-xl text-muted mb-4">No se encontraron propiedades</p>
+                <p className="text-xl text-muted mb-4">{t.noResults}</p>
                 <button
                   onClick={clearFilters}
                   className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-orange-500 transition-colors"
                 >
-                  Limpiar filtros
+                  {t.clearFilters}
                 </button>
               </div>
             )}
@@ -246,15 +327,26 @@ function SearchContent() {
   );
 }
 
+function LoadingFallback() {
+  const { locale } = useLanguage();
+  const loadingText = {
+    es: 'Cargando...',
+    en: 'Loading...',
+    ru: 'Загрузка...',
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-xl text-muted">{loadingText[locale]}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function SearchPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-muted">Cargando...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<LoadingFallback />}>
       <SearchContent />
     </Suspense>
   );

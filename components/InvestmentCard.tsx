@@ -1,14 +1,27 @@
+'use client';
+
 import { Bed, Bath, Maximize, MapPin, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
+import { useLanguage, getLocalizedField } from '@/lib/i18n';
 
 interface InvestmentCardProps {
   property: Property;
 }
 
 export default function InvestmentCard({ property }: InvestmentCardProps) {
+  const { locale } = useLanguage();
+
+  const translations = {
+    es: { bedrooms: 'hab', bathrooms: 'baños' },
+    en: { bedrooms: 'beds', bathrooms: 'baths' },
+    ru: { bedrooms: 'спален', bathrooms: 'ванных' },
+  };
+
+  const t = translations[locale];
+
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
@@ -16,13 +29,15 @@ export default function InvestmentCard({ property }: InvestmentCardProps) {
     }).format(price);
   };
 
+  const title = getLocalizedField(property, 'title', locale) || property.title;
+
   return (
     <Link href={`/propiedad/${property.id}`} className="group flex-shrink-0 w-full min-w-[280px] max-w-[320px] bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
           src={property.images[0]}
-          alt={property.title}
+          alt={title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
         {property.badge && (
@@ -47,7 +62,7 @@ export default function InvestmentCard({ property }: InvestmentCardProps) {
         </div>
 
         {/* Title */}
-        <h3 className="text-lg font-semibold line-clamp-1">{property.title}</h3>
+        <h3 className="text-lg font-semibold line-clamp-1">{title}</h3>
 
         {/* Location */}
         <div className="flex items-center text-muted text-sm">
@@ -60,13 +75,13 @@ export default function InvestmentCard({ property }: InvestmentCardProps) {
           {property.specs.bedrooms && (
             <div className="flex items-center gap-1">
               <Bed className="w-4 h-4" />
-              <span>{property.specs.bedrooms} hab</span>
+              <span>{property.specs.bedrooms} {t.bedrooms}</span>
             </div>
           )}
           {property.specs.bathrooms && (
             <div className="flex items-center gap-1">
               <Bath className="w-4 h-4" />
-              <span>{property.specs.bathrooms} baños</span>
+              <span>{property.specs.bathrooms} {t.bathrooms}</span>
             </div>
           )}
           <div className="flex items-center gap-1">
