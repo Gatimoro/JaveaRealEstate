@@ -1,6 +1,3 @@
-'use client';
-
-import { useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { Property } from '@/data/properties';
 import PropertyCard from './PropertyCard';
@@ -18,41 +15,6 @@ export default function PropertyCarousel({
   properties,
   id,
 }: PropertyCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!scrollRef.current) return;
-    setIsDragging(true);
-    setStartX(e.pageX - scrollRef.current.offsetLeft);
-    setScrollLeft(scrollRef.current.scrollLeft);
-    scrollRef.current.style.cursor = 'grabbing';
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    if (scrollRef.current) {
-      scrollRef.current.style.cursor = 'grab';
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 2;
-    scrollRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging && scrollRef.current) {
-      setIsDragging(false);
-      scrollRef.current.style.cursor = 'grab';
-    }
-  };
-
   const renderCard = (property: Property) => {
     switch (property.type) {
       case 'investment':
@@ -81,14 +43,7 @@ export default function PropertyCarousel({
 
         {/* Horizontal Scrollable Row */}
         <div className="relative">
-          <div
-            ref={scrollRef}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            className="flex gap-6 overflow-x-auto scrollbar-hidden pb-4 snap-x snap-mandatory cursor-grab select-none"
-          >
+          <div className="flex gap-6 overflow-x-auto scrollbar-hidden pb-4 snap-x snap-mandatory">
             {properties.map((property) => renderCard(property))}
           </div>
 
