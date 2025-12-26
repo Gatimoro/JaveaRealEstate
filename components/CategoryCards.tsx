@@ -34,7 +34,7 @@ export default function CategoryCards() {
               className="group relative bg-card border border-border rounded-xl p-8 hover:border-primary transition-all duration-300 hover-glow"
             >
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="p-4 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 rounded-lg group-hover:from-cyan-400/20 group-hover:to-blue-500/20 transition-colors">
+                <div className="p-4 bg-gradient-to-br from-orange-400/10 to-orange-600/10 rounded-lg group-hover:from-orange-400/20 group-hover:to-orange-600/20 transition-colors">
                   <Icon className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold">{category.title}</h3>

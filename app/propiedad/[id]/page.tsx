@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Bed, Bath, Maximize, MapPin, ExternalLink, Crop } from 'lucide-react';
+import { ArrowLeft, Bed, Bath, Maximize, MapPin, ExternalLink, Crop, ChevronLeft, ChevronRight } from 'lucide-react';
 import { allProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 
@@ -39,6 +39,18 @@ export default function PropertyDetailPage() {
     }).format(price);
   };
 
+  const nextImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === property.images.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === 0 ? property.images.length - 1 : prev - 1
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -54,7 +66,7 @@ export default function PropertyDetailPage() {
         {/* Image Gallery */}
         <div className="mb-8">
           {/* Hero Image */}
-          <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden mb-4">
+          <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden mb-4 group">
             <img
               src={property.images[selectedImageIndex]}
               alt={property.title}
@@ -64,6 +76,31 @@ export default function PropertyDetailPage() {
               <div className="absolute top-4 left-4 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-full">
                 {property.badge}
               </div>
+            )}
+
+            {/* Navigation Arrows - Only show if more than 1 image */}
+            {property.images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+
+                {/* Image counter */}
+                <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/70 text-white text-sm rounded-full">
+                  {selectedImageIndex + 1} / {property.images.length}
+                </div>
+              </>
             )}
           </div>
 

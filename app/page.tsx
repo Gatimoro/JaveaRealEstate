@@ -2,6 +2,7 @@ import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import CategoryCards from '@/components/CategoryCards';
 import PropertyCarousel from '@/components/PropertyCarousel';
+import AnalyticsSection from '@/components/AnalyticsSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
 import { houses, investments, plots } from '@/data/properties';
@@ -23,6 +24,7 @@ export default function Home() {
         id="inversiones"
       />
       <PropertyCarousel title="Parcelas" properties={plots} id="parcelas" />
+      <AnalyticsSection />
       <CTASection />
       <Footer />
     </main>
