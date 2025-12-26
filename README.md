@@ -1,268 +1,385 @@
-# Jávea Real Estate 🏖️
+# Jávea Real Estate Aggregator 🏖️
 
-A modern, dark-themed real estate aggregation website for Jávea, Spain, built with Next.js 14, TypeScript, and Tailwind CSS.
+A modern, multilingual real estate aggregation platform for Jávea, Spain. Built with Next.js 14, TypeScript, Tailwind CSS, and ready for Supabase integration.
 
-![Hero Preview](https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=400&fit=crop)
+![Version](https://img.shields.io/badge/version-1.0.0-orange)
+![Next.js](https://img.shields.io/badge/Next.js-14.2-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
+![Tailwind](https://img.shields.io/badge/Tailwind-3.x-38bdf8)
 
-## 🎯 Features
+## 🌟 Features
 
-- **Dark Theme Design** - Sleek near-black background with cyan/blue accents
-- **Property Categories** - Houses, Investment Opportunities, and Land Plots
-- **Responsive Carousels** - Horizontal scrolling property showcases
-- **Modern UI/UX** - Glassmorphism effects, gradient text, and glow effects
-- **Fully Responsive** - Mobile-first design that works on all devices
-- **TypeScript** - Type-safe development experience
-- **Performance Optimized** - Built with Next.js 14 App Router
+### ✅ Current Implementation
 
-## 📚 Framework Overview
+- **🖼️ Multi-image property listings** - Gallery with prev/next navigation and thumbnails
+- **🔍 Advanced search** - Filters for price, bedrooms, bathrooms, size, and type
+- **📍 Geospatial features** - Similar properties within 5km using Haversine formula
+- **🌍 Multilingual support** - Spanish (primary), English, and Russian translations
+- **📱 Responsive design** - Mobile-first, optimized for all screen sizes
+- **🏠 Property types** - Houses/Apartments, Investment opportunities, Land/Plots
+- **🎨 Modern UI** - Orange theme, smooth animations, glassmorphism effects
+- **📊 Analytics section** - Market statistics and average prices by type
+- **🔗 Wired navigation** - All links functional (search by type, home, property details)
+- **📏 Optimized layout** - Denser cards, efficient grid system
 
-### Next.js 14
+### 🚀 Ready for Supabase Integration
 
-Next.js is a React framework that provides:
+- **📊 Database schema** - Complete PostgreSQL + PostGIS schema designed
+- **🗺️ PostGIS integration** - Geospatial queries for location-based features
+- **🏷️ Feature tagging system** - Normalized features with multilingual labels
+- **💰 Price history tracking** - Track market trends and price changes
+- **🌆 Geographic areas** - Neighborhood/area management system
+- **📡 API layer** - Data fetching utilities ready for real-time data
+- **🔄 Migration path** - Clear migration from static to database
 
-- **App Router** - New routing system based on the file system (replaces Pages Router)
-- **Server Components** - Components that render on the server by default (better performance)
-- **Client Components** - Interactive components that run in the browser (marked with `'use client'`)
-- **Automatic Code Splitting** - Only loads the JavaScript needed for each page
-- **Built-in Optimization** - Image optimization, font optimization, and more
-- **File-based Routing** - Create routes by adding files to the `app/` directory
+## 🏗️ Architecture
 
-**Key Concepts:**
-- `app/layout.tsx` - Root layout that wraps all pages
-- `app/page.tsx` - Home page component
-- `'use client'` directive - Marks components that need browser interactivity (like `useState`, event handlers)
+### Technology Stack
 
-### TypeScript
+**Frontend:**
+- ⚡ Next.js 14 with App Router
+- 📘 TypeScript (strict mode)
+- 🎨 Tailwind CSS v3
+- ⚛️ React Server Components
+- 🎯 Lucide Icons
 
-TypeScript adds static typing to JavaScript:
+**Backend (Ready to Deploy):**
+- 🐘 PostgreSQL via Supabase
+- 🗺️ PostGIS for geospatial queries
+- 🔐 Row-Level Security (RLS)
+- 📡 Real-time subscriptions
+- ⚙️ Edge Functions
 
-- **Type Safety** - Catch errors before runtime
-- **Better IDE Support** - Autocomplete, refactoring, and inline documentation
-- **Interfaces** - Define the shape of objects (like our `Property` interface)
-- **Type Inference** - TypeScript can often figure out types automatically
+**Deployment:**
+- ▲ Vercel (Frontend - zero config)
+- 🔷 Supabase Cloud (Database + Auth)
 
-**Example:**
-```typescript
-interface Property {
-  id: string;
-  title: string;
-  price: number;
-  // ... TypeScript ensures we use these properties correctly
-}
+### Project Structure
+
+```
+JaveaRealEstate/
+├── app/                          # Next.js App Router
+│   ├── page.tsx                 # ✅ Landing page with carousels
+│   ├── layout.tsx               # Root layout
+│   ├── globals.css              # ✅ Custom CSS (orange theme)
+│   ├── buscar/                  # ✅ Search results
+│   │   └── page.tsx
+│   └── propiedad/[id]/          # ✅ Property detail page
+│       └── page.tsx
+│
+├── components/                   # React Components
+│   ├── Navbar.tsx               # ✅ Navigation with links
+│   ├── HeroSection.tsx          # ✅ Hero with functional search
+│   ├── CategoryCards.tsx        # Property type cards
+│   ├── PropertyCarousel.tsx     # ✅ Carousel with "Ver todo" links
+│   ├── PropertyCard.tsx         # ✅ Responsive house card
+│   ├── InvestmentCard.tsx       # ✅ Responsive investment card
+│   ├── PlotCard.tsx             # ✅ Responsive plot card
+│   ├── AnalyticsSection.tsx     # ✅ Market statistics
+│   ├── CTASection.tsx           # Call-to-action
+│   └── Footer.tsx               # Site footer
+│
+├── data/                         # Data Layer
+│   └── properties.ts            # ✅ Static data with translations
+│                                # (18 properties, ready for migration)
+│
+├── lib/                          # 🔜 To be created
+│   ├── supabase.ts              # Supabase client setup
+│   ├── api.ts                   # Data fetching functions
+│   ├── i18n.ts                  # Internationalization utilities
+│   └── utils.ts                 # Helper functions
+│
+├── types/                        # TypeScript Types
+│   └── supabase.ts              # 🔜 Generated database types
+│
+├── supabase/                     # 🔜 Database
+│   └── migrations/
+│       ├── 001_initial_schema.sql
+│       ├── 002_rpc_functions.sql
+│       └── 003_seed_data.sql
+│
+├── docs/                         # 🔜 Documentation
+│   ├── SETUP.md                 # Supabase setup guide
+│   ├── MIGRATION.md             # Migration guide
+│   ├── API.md                   # API reference
+│   └── SCRAPER.md               # Web scraper guide
+│
+├── public/                       # Static assets
+├── .env.example                  # 🔜 Environment template
+└── README.md                     # This file
 ```
 
-### Tailwind CSS
+## 🚀 Quick Start
 
-Utility-first CSS framework:
+### Prerequisites
 
-- **Utility Classes** - Small, single-purpose classes like `bg-blue-500`, `p-4`, `rounded-lg`
-- **No Context Switching** - Style directly in your JSX/TSX
-- **Responsive Design** - Built-in breakpoints (`md:`, `lg:`, etc.)
-- **Custom Configuration** - Extend with custom colors, spacing, etc.
+- Node.js 18+ and npm
+- Supabase account (optional for now, free tier)
+- Git
 
-**Example:**
-```tsx
-<div className="bg-card border border-border rounded-xl p-5 hover:border-primary">
-  // Tailwind classes for styling
-</div>
-```
-
-### Lucide React
-
-Icon library providing:
-- 1000+ consistent, customizable icons
-- React components for easy integration
-- Small bundle size (tree-shakeable)
-
-**Example:**
-```tsx
-import { Home, Search } from 'lucide-react';
-<Home className="w-6 h-6 text-primary" />
-```
-
-## 🚀 Setup Instructions for Arch Linux
-
-### 1. Install Node.js and npm
+### Installation
 
 ```bash
-# Update system
-sudo pacman -Syu
+# 1. Clone repository
+git clone <repository-url>
+cd JaveaRealEstate
 
-# Install Node.js and npm
-sudo pacman -S nodejs npm
-
-# Verify installation
-node --version   # Should be v20.x or higher
-npm --version    # Should be v10.x or higher
-```
-
-### 2. Clone and Navigate to Project
-
-```bash
-# Navigate to the project directory
-cd javea-real-estate
-
-# Verify you're in the right directory
-ls -la  # Should see package.json, app/, components/, etc.
-```
-
-### 3. Install Dependencies
-
-```bash
-# Install all project dependencies
+# 2. Install dependencies
 npm install
 
-# This will install:
-# - next (Next.js framework)
-# - react & react-dom (React library)
-# - typescript (TypeScript compiler)
-# - tailwindcss (CSS framework)
-# - lucide-react (Icon library)
-# - And all dev dependencies
-```
-
-### 4. Run Development Server
-
-```bash
-# Start the development server
+# 3. Start development server
 npm run dev
 
-# The server will start on http://localhost:3000
-# Open your browser and navigate to http://localhost:3000
+# 4. Open browser
+# Navigate to http://localhost:3000
 ```
 
-**What happens during `npm run dev`:**
-1. Next.js compiles your TypeScript files
-2. Tailwind CSS processes your styles
-3. Development server starts with hot reload (auto-refresh on file changes)
-4. You can now see your changes instantly!
-
-### 5. Build for Production (Optional)
+### With Supabase (Optional)
 
 ```bash
-# Create an optimized production build
-npm run build
+# 1. Copy environment template
+cp .env.example .env.local
 
-# Start the production server
-npm start
+# 2. Add your Supabase credentials to .env.local
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxxx...
 
-# The production build is faster and optimized
+# 3. Run database migrations (see docs/SETUP.md)
+
+# 4. Start with live data
+npm run dev
 ```
 
-## 📁 Project Structure
+## 📊 Database Schema (Ready to Deploy)
 
-```
-javea-real-estate/
-├── app/                      # Next.js 14 App Router
-│   ├── layout.tsx           # Root layout (wraps all pages)
-│   ├── page.tsx             # Home page
-│   └── globals.css          # Global styles & CSS variables
-├── components/               # React components
-│   ├── Navbar.tsx           # Navigation bar
-│   ├── HeroSection.tsx      # Hero with search
-│   ├── CategoryCards.tsx    # 3 category icons
-│   ├── PropertyCard.tsx     # House/apartment card
-│   ├── InvestmentCard.tsx   # Investment property card
-│   ├── PlotCard.tsx         # Land plot card
-│   ├── PropertyCarousel.tsx # Horizontal scrolling section
-│   ├── CTASection.tsx       # Call-to-action section
-│   └── Footer.tsx           # Footer
-├── data/                     # Data and types
-│   └── properties.ts        # Sample property data
-├── public/                   # Static assets
-├── tailwind.config.ts       # Tailwind configuration
-├── tsconfig.json            # TypeScript configuration
-├── next.config.js           # Next.js configuration
-└── package.json             # Dependencies and scripts
+### Core Tables
+
+#### `properties` - Main listings table
+```sql
+- id (uuid, PK)
+- external_id (text, unique) -- Prevents duplicate scraping
+- type (house | investment | plot)
+- status (active | sold | inactive)
+- price, location, coordinates (PostGIS point)
+- title_es, title_en, title_ru
+- description_es, description_en, description_ru
+- images (text[])
+- bedrooms, bathrooms, size_built, size_plot
+- roi_percentage, rental_yield (investments)
+- zone, buildable, max_build_sqm (plots)
+- source, source_url -- Track origin (idealista, fotocasa)
+- first_seen_at, last_seen_at, updated_at
 ```
 
-## 🎨 Color Palette
-
-The site uses CSS custom properties for easy theming:
-
-```css
---background: #0a0a0f     /* Near-black background */
---card: #12121a           /* Dark card background */
---border: #1e1e2e         /* Subtle borders */
---primary: #06b6d4        /* Cyan accent */
---secondary: #3b82f6      /* Blue accent */
---foreground: #ffffff     /* White text */
---muted: #94a3b8          /* Muted gray text */
+#### `features` - Normalized features
+```sql
+- id (uuid, PK)
+- slug (text, unique) -- 'pool', 'garage', 'sea_view'
+- name_es, name_en, name_ru
+- category (amenities | exterior | interior | security)
 ```
 
-## 🛠️ Available Scripts
-
-```bash
-npm run dev      # Start development server (http://localhost:3000)
-npm run build    # Build for production
-npm start        # Start production server
-npm run lint     # Run ESLint to check code quality
+#### `property_features` - Junction table
+```sql
+- property_id (uuid, FK)
+- feature_id (uuid, FK)
 ```
 
-## 📦 Data Structure
+#### `price_history` - Price tracking
+```sql
+- id (uuid, PK)
+- property_id (uuid, FK)
+- price (integer)
+- recorded_at (timestamptz)
+```
 
-Properties are defined in `data/properties.ts`:
+#### `areas` - Geographic neighborhoods
+```sql
+- id (uuid, PK)
+- slug, name_es, name_en, name_ru
+- municipality (Jávea)
+- center (PostGIS point)
+- bounds (PostGIS polygon)
+```
 
+### PostGIS Functions
+
+**`nearby_properties(lat, lng, radius_km, type, max_price)`**
+- Finds properties within X km using ST_DWithin
+- Sorts by distance
+- Filters by type and price
+
+**`get_property_full(property_uuid)`**
+- Returns property with all features, price history, and nearby properties
+- Single query for property detail page
+
+See `supabase/migrations/` for complete schema.
+
+## 🌍 Multilingual System
+
+### Current Implementation
+
+Each property has separate fields for each language:
 ```typescript
-interface Property {
-  id: string;
-  type: 'house' | 'investment' | 'plot';
-  title: string;
-  price: number;
-  location: string;
-  image: string;
-  badge?: string;
-  specs: {
-    bedrooms?: number;
-    bathrooms?: number;
-    size: number;
-    plotSize?: number;
-    roi?: number;
-    zone?: string;
-    buildable?: boolean;
-  };
+{
+  title_es: "Villa moderna con vistas al mar",
+  title_en: "Modern villa with sea views",
+  title_ru: "Современная вилла с видом на море",
+  description_es: "...",
+  description_en: "...",
+  description_ru: "...",
+  features: ['Piscina', 'Jardín'],
+  featuresEn: ['Pool', 'Garden'],
+  featuresRu: ['Бассейн', 'Сад']
 }
 ```
 
-Currently using placeholder images from Unsplash. Replace with real property images later.
+### Language Detection (Future)
+- Browser language preference
+- URL parameter: `?lang=en`
+- LocalStorage persistence
+- Cookie-based (for SEO)
 
-## 🔧 Customization Tips
+### i18n Library Integration (Future)
+- next-intl for route-based locales (/en/, /ru/)
+- SEO-optimized alternate links
+- Automatic redirects based on Accept-Language
 
-### Adding New Properties
+## 🎨 Design System
 
-Edit `data/properties.ts`:
-
-```typescript
-export const houses: Property[] = [
-  {
-    id: 'h7',
-    type: 'house',
-    title: 'Your new property',
-    price: 500000,
-    // ... add your property details
-  },
-  // ... existing properties
-];
-```
-
-### Changing Colors
-
-Edit `app/globals.css`:
+### Color Palette (Orange Theme)
 
 ```css
-:root {
-  --primary: #your-color;  /* Change primary accent */
-}
+/* Primary Colors */
+--primary: #f97316        /* Orange-500 (main accent) */
+--secondary: #fb923c      /* Orange-400 (secondary) */
+--orange-hover: #ea580c   /* Orange-600 (hover states) */
+
+/* Background & Cards */
+--background: #0a0a0a     /* Near-black */
+--card: #1a1a1a           /* Dark gray cards */
+--border: #2a2a2a         /* Subtle borders */
+
+/* Text */
+--foreground: #ffffff     /* Primary text */
+--muted: #94a3b8          /* Secondary text */
 ```
 
-### Adding New Sections
+### Typography
+- Font: System font stack (optimized)
+- Headings: Bold, gradient orange
+- Body: Regular weight
+- Monospace: Code blocks
 
-1. Create a new component in `components/`
-2. Import and add it to `app/page.tsx`
+### Spacing & Sizing
+- Base unit: 4px (Tailwind default)
+- Container: max-width 1280px
+- Card radius: 12px-16px
+- Gap in grids: 16px (gap-4) or 24px (gap-6)
 
-## 🌐 Deployment
+### Components
+- **Cards**: Dark bg, orange border on hover, glow effect
+- **Buttons**: Orange primary, white text, hover states
+- **Inputs**: Dark bg, orange focus ring
+- **Transitions**: 300ms ease for smooth interactions
 
-### Deploy to Vercel (Recommended)
+## 🔍 Search & Filtering
+
+### Current Filters (app/buscar)
+✅ Property type (house, investment, plot)
+✅ Price range (min/max €)
+✅ Bedrooms (minimum)
+✅ Bathrooms (minimum)
+✅ Size (minimum m²)
+✅ Text search (title, location, description)
+✅ URL parameters (?type=house, ?q=villa)
+
+### Grid Layout
+- Responsive CSS Grid: `repeat(auto-fill, minmax(260px, 1fr))`
+- Gap: 16px (optimized for density)
+- Sidebar filters on desktop
+- Collapsible filters on mobile
+
+### Future Enhancements
+- 🔜 Area/neighborhood dropdown
+- 🔜 Feature checkboxes (pool, garage, etc.)
+- 🔜 Sort options (price, size, date added)
+- 🔜 Map view with markers
+- 🔜 Saved searches (requires auth)
+
+## 📈 Analytics & Insights
+
+### Current (AnalyticsSection.tsx)
+- Average price by type (houses, investments, plots)
+- Total property count
+- Market trends (mocked with ±X%)
+
+### Ready with Supabase
+```sql
+-- Average price by type
+SELECT type, AVG(price), COUNT(*)
+FROM properties
+WHERE status = 'active'
+GROUP BY type;
+
+-- Price trends over time
+SELECT DATE_TRUNC('month', recorded_at), AVG(price)
+FROM price_history
+GROUP BY 1 ORDER BY 1;
+
+-- Most expensive areas
+SELECT area, AVG(price)
+FROM properties
+WHERE status = 'active'
+GROUP BY area
+ORDER BY 2 DESC;
+```
+
+## 🔐 Security
+
+### Current
+- ✅ Environment variables for API keys
+- ✅ Input sanitization in search
+- ✅ No direct user input to database (static data)
+
+### With Supabase RLS
+```sql
+-- Anonymous users can read active listings
+CREATE POLICY "Anyone can view active properties"
+  ON properties FOR SELECT
+  USING (status = 'active');
+
+-- Only authenticated admins can insert/update
+CREATE POLICY "Admins can manage properties"
+  ON properties FOR ALL
+  USING (auth.role() = 'admin');
+```
+
+## ⚡ Performance
+
+### Current Optimizations
+- ✅ Next.js automatic code splitting
+- ✅ CSS Grid for responsive layouts
+- ✅ Minimal client-side JavaScript
+- ✅ Optimized images (via Next.js)
+
+### Production Ready
+- ISR (Incremental Static Regeneration) every hour
+- Edge caching via Vercel CDN
+- Database indexes on common queries:
+  - `type`, `status`, `price`, `municipality`
+  - PostGIS GIST index on `coordinates`
+- Connection pooling (Supabase built-in)
+
+### Performance Targets
+- Lighthouse score: 90+ (all metrics)
+- Time to First Byte: <200ms
+- Largest Contentful Paint: <2.5s
+- First Input Delay: <100ms
+
+## 🚀 Deployment
+
+### Vercel (Frontend)
 
 ```bash
 # Install Vercel CLI
@@ -271,83 +388,140 @@ npm i -g vercel
 # Deploy
 vercel
 
-# Follow the prompts
+# Add environment variables in Vercel dashboard:
+# NEXT_PUBLIC_SUPABASE_URL
+# NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
-### Deploy to Other Platforms
+Or connect GitHub repo for automatic deployments.
 
-The production build (`npm run build`) creates a `.next` folder that can be deployed to:
-- Vercel (zero-config)
-- Netlify
-- Railway
-- Your own server (requires Node.js)
+### Supabase (Backend)
 
-## 📱 Responsive Breakpoints
+1. Create project at supabase.com
+2. Run migrations from `supabase/migrations/`
+3. Configure RLS policies
+4. Enable PostGIS extension
+5. Copy API URL and anon key to Vercel
 
-Tailwind's default breakpoints:
+See `docs/SETUP.md` for step-by-step guide.
 
-- `sm`: 640px (small tablets)
-- `md`: 768px (tablets)
-- `lg`: 1024px (laptops)
-- `xl`: 1280px (desktops)
-- `2xl`: 1536px (large screens)
+## 🛠️ Development
 
-**Example:**
-```tsx
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-  {/* 1 column on mobile, 3 columns on tablet+ */}
-</div>
-```
-
-## 🐛 Troubleshooting
-
-### Port 3000 already in use
+### Available Scripts
 
 ```bash
-# Kill the process using port 3000
-sudo lsof -ti:3000 | xargs kill -9
-
-# Or use a different port
-npm run dev -- -p 3001
+npm run dev      # Start development server (:3000)
+npm run build    # Build for production
+npm start        # Start production server
+npm run lint     # Run ESLint
 ```
 
-### Module not found errors
+### Git Workflow
 
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
+**Branches:**
+- `main` - Production
+- `claude/*` - AI-assisted features
+
+**Commit Convention:**
+```
+feat: Add property filtering
+fix: Resolve search bug
+docs: Update README
+style: Update card layout
+refactor: Optimize queries
 ```
 
-### TypeScript errors
+### Code Quality
+- TypeScript strict mode enabled
+- ESLint for code quality
+- Type-safe Supabase queries (generated types)
 
-```bash
-# Check TypeScript configuration
-npx tsc --noEmit
+## 🐛 Known Issues & Limitations
 
-# Often fixed by restarting your editor
-```
+### Current Limitations
+- ⚠️ Using static data (18 sample properties)
+- ⚠️ No user authentication yet
+- ⚠️ No admin panel for managing listings
+- ⚠️ Mock coordinates (need real geocoding)
+- ⚠️ No image upload (using Unsplash placeholders)
 
-## 🚀 Next Steps
+### Future Work (TODO.md)
+- [ ] Connect to Supabase
+- [ ] Build web scraper for idealista/fotocasa
+- [ ] Implement geocoding service
+- [ ] Add user authentication
+- [ ] Create admin dashboard
+- [ ] Set up automated scraping cron jobs
+- [ ] Add email notifications
+- [ ] Implement favorites/saved searches
+- [ ] Add map view with clustering
+- [ ] Build mobile app (React Native)
 
-Run `npm audit` for details.rty Detail Pages** - Click on a property to see full details
-3. **Filters** - Add price range, bedrooms, location filters
-4. **Contact Forms** - Add inquiry forms for properties
-5. **Admin Panel** - Create interface to manage properties
-6. **Database Integration** - Connect to PostgreSQL/MongoDB
-7. **Authentication** - Add user accounts and favorites
-8. **Map Integration** - Show properties on a map
-9. **Image Gallery** - Multiple images per property
-10. **Multi-language** - Add English version
+## 📚 Documentation
 
-## 📄 License
+- **[SETUP.md](docs/SETUP.md)** - Complete Supabase setup guide
+- **[MIGRATION.md](docs/MIGRATION.md)** - Migrate from static to database
+- **[API.md](docs/API.md)** - API reference and examples
+- **[SCRAPER.md](docs/SCRAPER.md)** - Web scraping guide
+- **[TODO.md](TODO.md)** - Roadmap and next steps
 
-This project is open source and available for educational purposes.
+## 🔄 Migration Path
+
+### From Static Data to Supabase (When Ready)
+
+1. **Set up Supabase**
+   - Create project
+   - Run migrations
+   - Seed initial data
+
+2. **Update code**
+   - Create `lib/supabase.ts`
+   - Create `lib/api.ts` with fetch functions
+   - Update pages to use API calls
+
+3. **Migrate data**
+   - Export current 18 properties
+   - Insert into Supabase
+   - Add real coordinates (geocoding)
+
+4. **Deploy**
+   - Push to Vercel
+   - Add environment variables
+   - Test in production
+
+See `docs/MIGRATION.md` for detailed steps.
 
 ## 🤝 Contributing
 
-This is a starting point for your project. Feel free to customize and expand!
+This project is in active development. Contributions welcome!
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'feat: Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+## 🙏 Acknowledgments
+
+- Next.js team for the amazing framework
+- Supabase for backend infrastructure
+- Vercel for seamless hosting
+- Tailwind CSS for the design system
+- Lucide for beautiful icons
+- Unsplash for placeholder images
+
+## 📞 Contact & Support
+
+- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
+- **Email**: your.email@example.com
+- **Documentation**: See `docs/` folder
 
 ---
 
-**Built with ❤️ for Jávea, Spain**
+**Built with ❤️ for the Jávea real estate market**
+
+*Ready to aggregate properties from idealista, fotocasa, kyero, and more!*

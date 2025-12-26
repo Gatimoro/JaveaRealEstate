@@ -14,6 +14,7 @@ import Footer from '@/components/Footer';
 function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const typeParam = searchParams.get('type') || 'all';
 
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -22,7 +23,7 @@ function SearchContent() {
     bedrooms: '',
     bathrooms: '',
     minSize: '',
-    type: 'all',
+    type: typeParam,
   });
 
   const filteredProperties = useMemo(() => {
@@ -218,7 +219,7 @@ function SearchContent() {
           {/* Results Grid */}
           <div className="flex-1">
             {filteredProperties.length > 0 ? (
-              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))' }}>
+              <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))' }}>
                 {filteredProperties.map((property) => (
                   <div key={property.id} className="w-full">
                     {renderPropertyCard(property)}

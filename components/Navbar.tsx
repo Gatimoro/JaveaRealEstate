@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -23,19 +24,19 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg" />
             <span className="text-xl font-bold">Jávea Real Estate</span>
-          </div>
+          </Link>
 
           {/* Nav Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <a
-              href="#inicio"
+            <Link
+              href="/"
               className="text-foreground hover:text-primary transition-colors"
             >
               Inicio
-            </a>
+            </Link>
             <a
               href="#nosotros"
               className="text-foreground hover:text-primary transition-colors"
