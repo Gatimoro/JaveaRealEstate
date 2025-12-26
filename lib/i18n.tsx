@@ -16,26 +16,28 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 // Language provider component
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('es');
-
-  // Load locale from localStorage on mount
-  useEffect(() => {
-    const savedLocale = localStorage.getItem('locale') as Locale;
-    if (savedLocale && locales.includes(savedLocale)) {
-      setLocaleState(savedLocale);
-    } else {
+  // Initialize from localStorage if available, otherwise default to 'es'
+  const [locale, setLocaleState] = useState<Locale>(() => {
+    if (typeof window !== 'undefined') {
+      const savedLocale = localStorage.getItem('locale') as Locale;
+      if (savedLocale && locales.includes(savedLocale)) {
+        return savedLocale;
+      }
       // Detect browser language
       const browserLang = navigator.language.split('-')[0];
       if (browserLang === 'en' || browserLang === 'ru') {
-        setLocaleState(browserLang as Locale);
+        return browserLang as Locale;
       }
     }
-  }, []);
+    return 'es';
+  });
 
   // Save locale to localStorage when it changes
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);
-    localStorage.setItem('locale', newLocale);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('locale', newLocale);
+    }
   };
 
   return (

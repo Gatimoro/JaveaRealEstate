@@ -6,33 +6,122 @@ import Link from 'next/link';
 import { ArrowLeft, Bed, Bath, Maximize, MapPin, ExternalLink, Crop, ChevronLeft, ChevronRight } from 'lucide-react';
 import { allProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
+import { useLanguage, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
 
 export default function PropertyDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { locale } = useLanguage();
 
   const property = allProperties.find((p) => p.id === id);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  const translations = {
+    es: {
+      notFound: 'Propiedad no encontrada',
+      backToHome: 'Volver al inicio',
+      back: 'Volver',
+      image: 'imagen',
+      bedrooms: 'habitaciones',
+      bathrooms: 'baños',
+      plot: 'parcela',
+      description: 'Descripción',
+      features: 'Características',
+      contactInfo: 'Información de contacto',
+      viewOriginal: 'Ver oferta original',
+      interested: '¿Interesado en esta propiedad? Contacta con nosotros para más información.',
+      requestInfo: 'Solicitar información',
+      investment: 'Inversión',
+      annualReturn: 'Rentabilidad anual:',
+      estimatedIncome: 'Ingresos estimados/año:',
+      zone: 'Zona',
+      buildability: 'Edificabilidad',
+      buildable: '✓ Edificable',
+      notBuildable: '✗ No edificable',
+      similarProperties: 'Propiedades similares cerca',
+      lessThan: 'a menos de',
+      meters: 'metros',
+      at: 'a',
+    },
+    en: {
+      notFound: 'Property not found',
+      backToHome: 'Back to home',
+      back: 'Back',
+      image: 'image',
+      bedrooms: 'bedrooms',
+      bathrooms: 'bathrooms',
+      plot: 'plot',
+      description: 'Description',
+      features: 'Features',
+      contactInfo: 'Contact Information',
+      viewOriginal: 'View original listing',
+      interested: 'Interested in this property? Contact us for more information.',
+      requestInfo: 'Request information',
+      investment: 'Investment',
+      annualReturn: 'Annual return:',
+      estimatedIncome: 'Estimated income/year:',
+      zone: 'Zone',
+      buildability: 'Buildability',
+      buildable: '✓ Buildable',
+      notBuildable: '✗ Not buildable',
+      similarProperties: 'Similar properties nearby',
+      lessThan: 'less than',
+      meters: 'meters',
+      at: 'at',
+    },
+    ru: {
+      notFound: 'Объект не найден',
+      backToHome: 'Вернуться на главную',
+      back: 'Назад',
+      image: 'изображение',
+      bedrooms: 'спален',
+      bathrooms: 'ванных',
+      plot: 'участок',
+      description: 'Описание',
+      features: 'Характеристики',
+      contactInfo: 'Контактная информация',
+      viewOriginal: 'Смотреть оригинал',
+      interested: 'Заинтересованы в этом объекте? Свяжитесь с нами для получения дополнительной информации.',
+      requestInfo: 'Запросить информацию',
+      investment: 'Инвестиции',
+      annualReturn: 'Годовая доходность:',
+      estimatedIncome: 'Ожидаемый доход/год:',
+      zone: 'Зона',
+      buildability: 'Застройка',
+      buildable: '✓ Возможна застройка',
+      notBuildable: '✗ Застройка невозможна',
+      similarProperties: 'Похожие объекты рядом',
+      lessThan: 'менее',
+      meters: 'метров',
+      at: 'на расстоянии',
+    },
+  };
+
+  const t = translations[locale];
 
   if (!property) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Propiedad no encontrada</h1>
+          <h1 className="text-2xl font-bold mb-4">{t.notFound}</h1>
           <button
             onClick={() => router.push('/')}
             className="text-primary hover:underline"
           >
-            Volver al inicio
+            {t.backToHome}
           </button>
         </div>
       </div>
     );
   }
 
+  const title = getLocalizedField(property, 'title', locale) || property.title;
+  const description = getLocalizedField(property, 'description', locale) || property.description;
+  const features = getLocalizedArray(property, 'features', locale);
+
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
@@ -94,9 +183,9 @@ export default function PropertyDetailPage() {
 
   const formatDistance = (distanceKm: number) => {
     if (distanceKm < 1) {
-      return `a menos de ${Math.round(distanceKm * 1000)} metros`;
+      return `${t.lessThan} ${Math.round(distanceKm * 1000)} ${t.meters}`;
     }
-    return `a ${distanceKm.toFixed(1)} km`;
+    return `${t.at} ${distanceKm.toFixed(1)} km`;
   };
 
   return (
@@ -108,7 +197,7 @@ export default function PropertyDetailPage() {
           className="flex items-center gap-2 text-muted hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Volver</span>
+          <span>{t.back}</span>
         </button>
 
         {/* Image Gallery */}
@@ -117,7 +206,7 @@ export default function PropertyDetailPage() {
           <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden mb-4 group">
             <img
               src={property.images[selectedImageIndex]}
-              alt={property.title}
+              alt={title}
               className="w-full h-full object-cover"
             />
             {property.badge && (
@@ -166,7 +255,7 @@ export default function PropertyDetailPage() {
               >
                 <img
                   src={image}
-                  alt={`${property.title} - imagen ${index + 1}`}
+                  alt={`${title} - ${t.image} ${index + 1}`}
                   className="w-full h-full object-cover hover:scale-110 transition-transform"
                 />
               </button>
@@ -179,7 +268,7 @@ export default function PropertyDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Title and Location */}
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-3">{property.title}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">{title}</h1>
               <div className="flex items-center text-muted text-lg mb-4">
                 <MapPin className="w-5 h-5 mr-2" />
                 <span>{property.location}</span>
@@ -194,13 +283,13 @@ export default function PropertyDetailPage() {
               {property.specs.bedrooms && (
                 <div className="flex items-center gap-2">
                   <Bed className="w-6 h-6 text-primary" />
-                  <span>{property.specs.bedrooms} habitaciones</span>
+                  <span>{property.specs.bedrooms} {t.bedrooms}</span>
                 </div>
               )}
               {property.specs.bathrooms && (
                 <div className="flex items-center gap-2">
                   <Bath className="w-6 h-6 text-primary" />
-                  <span>{property.specs.bathrooms} baños</span>
+                  <span>{property.specs.bathrooms} {t.bathrooms}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">
@@ -210,7 +299,7 @@ export default function PropertyDetailPage() {
               {property.specs.plotSize && (
                 <div className="flex items-center gap-2">
                   <Crop className="w-6 h-6 text-primary" />
-                  <span>{property.specs.plotSize}m² parcela</span>
+                  <span>{property.specs.plotSize}m² {t.plot}</span>
                 </div>
               )}
               {property.specs.roi && (
@@ -222,19 +311,19 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Description */}
-            {property.description && (
+            {description && (
               <div>
-                <h2 className="text-2xl font-bold mb-3">Descripción</h2>
-                <p className="text-muted leading-relaxed text-lg">{property.description}</p>
+                <h2 className="text-2xl font-bold mb-3">{t.description}</h2>
+                <p className="text-muted leading-relaxed text-lg">{description}</p>
               </div>
             )}
 
             {/* Features */}
-            {property.features && property.features.length > 0 && (
+            {features && features.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold mb-3">Características</h2>
+                <h2 className="text-2xl font-bold mb-3">{t.features}</h2>
                 <div className="flex flex-wrap gap-2">
-                  {property.features.map((feature, index) => (
+                  {features.map((feature, index) => (
                     <span
                       key={index}
                       className="px-4 py-2 bg-card border border-border rounded-full text-sm hover:border-primary transition-colors"
@@ -250,7 +339,7 @@ export default function PropertyDetailPage() {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-xl p-6 space-y-4 sticky top-8">
-              <h3 className="text-xl font-bold">Información de contacto</h3>
+              <h3 className="text-xl font-bold">{t.contactInfo}</h3>
 
               {property.sourceUrl && (
                 <a
@@ -259,30 +348,30 @@ export default function PropertyDetailPage() {
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
                 >
-                  <span>Ver oferta original</span>
+                  <span>{t.viewOriginal}</span>
                   <ExternalLink className="w-4 h-4" />
                 </a>
               )}
 
               <div className="pt-4 border-t border-border">
                 <p className="text-sm text-muted mb-4">
-                  ¿Interesado en esta propiedad? Contacta con nosotros para más información.
+                  {t.interested}
                 </p>
                 <button className="w-full bg-card border-2 border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary hover:text-white transition-colors">
-                  Solicitar información
+                  {t.requestInfo}
                 </button>
               </div>
 
               {property.type === 'investment' && property.specs.roi && (
                 <div className="pt-4 border-t border-border">
-                  <h4 className="font-semibold mb-2">Inversión</h4>
+                  <h4 className="font-semibold mb-2">{t.investment}</h4>
                   <div className="space-y-2 text-sm text-muted">
                     <div className="flex justify-between">
-                      <span>Rentabilidad anual:</span>
+                      <span>{t.annualReturn}</span>
                       <span className="font-semibold text-foreground">{property.specs.roi}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Ingresos estimados/año:</span>
+                      <span>{t.estimatedIncome}</span>
                       <span className="font-semibold text-foreground">
                         {formatPrice((property.price * property.specs.roi) / 100)}
                       </span>
@@ -293,16 +382,16 @@ export default function PropertyDetailPage() {
 
               {property.specs.zone && (
                 <div className="pt-4 border-t border-border">
-                  <h4 className="font-semibold mb-2">Zona</h4>
+                  <h4 className="font-semibold mb-2">{t.zone}</h4>
                   <p className="text-sm text-muted">{property.specs.zone}</p>
                 </div>
               )}
 
               {property.specs.buildable !== undefined && (
                 <div className="pt-4 border-t border-border">
-                  <h4 className="font-semibold mb-2">Edificabilidad</h4>
+                  <h4 className="font-semibold mb-2">{t.buildability}</h4>
                   <p className="text-sm text-muted">
-                    {property.specs.buildable ? '✓ Edificable' : '✗ No edificable'}
+                    {property.specs.buildable ? t.buildable : t.notBuildable}
                   </p>
                 </div>
               )}
@@ -313,62 +402,65 @@ export default function PropertyDetailPage() {
         {/* Similar Properties */}
         {similarProperties.length > 0 && (
           <div className="mt-16 pt-8 border-t border-border">
-            <h2 className="text-3xl font-bold mb-6">Propiedades similares cerca</h2>
+            <h2 className="text-3xl font-bold mb-6">{t.similarProperties}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {similarProperties.map((similar) => (
-                <Link
-                  key={similar.id}
-                  href={`/propiedad/${similar.id}`}
-                  className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
-                >
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={similar.images[0]}
-                      alt={similar.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+              {similarProperties.map((similar) => {
+                const similarTitle = getLocalizedField(similar, 'title', locale) || similar.title;
+                return (
+                  <Link
+                    key={similar.id}
+                    href={`/propiedad/${similar.id}`}
+                    className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
+                  >
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={similar.images[0]}
+                        alt={similarTitle}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
                     {similar.badge && (
                       <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
                         {similar.badge}
                       </div>
                     )}
                   </div>
-                  <div className="p-4">
-                    <div className="flex items-center text-sm text-primary mb-2">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      <span>{formatDistance(similar.distance)}</span>
-                    </div>
-                    <h3 className="font-bold text-lg mb-2 line-clamp-1">{similar.title}</h3>
-                    <p className="text-muted text-sm mb-3 flex items-center">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      {similar.location}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold gradient-text">
-                        {formatPrice(similar.price)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted mt-3 pt-3 border-t border-border">
-                      {similar.specs.bedrooms && (
+                    <div className="p-4">
+                      <div className="flex items-center text-sm text-primary mb-2">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        <span>{formatDistance(similar.distance)}</span>
+                      </div>
+                      <h3 className="font-bold text-lg mb-2 line-clamp-1">{similarTitle}</h3>
+                      <p className="text-muted text-sm mb-3 flex items-center">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        {similar.location}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold gradient-text">
+                          {formatPrice(similar.price)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted mt-3 pt-3 border-t border-border">
+                        {similar.specs.bedrooms && (
+                          <div className="flex items-center gap-1">
+                            <Bed className="w-4 h-4" />
+                            <span>{similar.specs.bedrooms}</span>
+                          </div>
+                        )}
+                        {similar.specs.bathrooms && (
+                          <div className="flex items-center gap-1">
+                            <Bath className="w-4 h-4" />
+                            <span>{similar.specs.bathrooms}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-1">
-                          <Bed className="w-4 h-4" />
-                          <span>{similar.specs.bedrooms}</span>
+                          <Maximize className="w-4 h-4" />
+                          <span>{similar.specs.size}m²</span>
                         </div>
-                      )}
-                      {similar.specs.bathrooms && (
-                        <div className="flex items-center gap-1">
-                          <Bath className="w-4 h-4" />
-                          <span>{similar.specs.bathrooms}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <Maximize className="w-4 h-4" />
-                        <span>{similar.specs.size}m²</span>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
