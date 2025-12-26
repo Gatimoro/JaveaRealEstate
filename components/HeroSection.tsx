@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export default function HeroSection() {
   const router = useRouter();
+  const { locale } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -15,7 +17,37 @@ export default function HeroSection() {
     } else {
       router.push('/buscar');
     }
+    // Don't clear the search query so user can see what they searched
   };
+
+  const translations = {
+    es: {
+      headline: 'Encuentra tu lugar en',
+      subtitle: 'Parcelas, obra nueva e inmuebles en la Costa Blanca',
+      searchPlaceholder: 'Buscar propiedades en Jávea...',
+      properties: 'Propiedades',
+      plots: 'Parcelas',
+      projects: 'Proyectos',
+    },
+    en: {
+      headline: 'Find your place in',
+      subtitle: 'Plots, new builds and properties on the Costa Blanca',
+      searchPlaceholder: 'Search properties in Jávea...',
+      properties: 'Properties',
+      plots: 'Plots',
+      projects: 'Projects',
+    },
+    ru: {
+      headline: 'Найди свое место в',
+      subtitle: 'Участки, новостройки и недвижимость на Коста Бланка',
+      searchPlaceholder: 'Поиск недвижимости в Хавеа...',
+      properties: 'Объектов',
+      plots: 'Участков',
+      projects: 'Проектов',
+    },
+  };
+
+  const t = translations[locale];
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20" id="inicio">
@@ -34,14 +66,14 @@ export default function HeroSection() {
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 text-center">
         <h1 className="text-5xl md:text-7xl font-bold mb-4">
-          Encuentra tu lugar en{' '}
+          {t.headline}{' '}
           <span className="gradient-text">Jávea</span>
         </h1>
 
         <div className="w-32 h-1 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto mb-6" />
 
         <p className="text-xl md:text-2xl text-muted mb-12 max-w-2xl mx-auto">
-          Parcelas, obra nueva e inmuebles en la Costa Blanca
+          {t.subtitle}
         </p>
 
         {/* Search Bar */}
@@ -51,7 +83,7 @@ export default function HeroSection() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar propiedades en Jávea..."
+              placeholder={t.searchPlaceholder}
               className="w-full px-6 py-4 pr-14 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <button
@@ -67,17 +99,17 @@ export default function HeroSection() {
         <div className="flex flex-wrap justify-center gap-8 text-center">
           <div className="flex items-center gap-2">
             <span className="text-3xl font-bold gradient-text">150+</span>
-            <span className="text-muted">Propiedades</span>
+            <span className="text-muted">{t.properties}</span>
           </div>
           <div className="hidden md:block text-muted">|</div>
           <div className="flex items-center gap-2">
             <span className="text-3xl font-bold gradient-text">50+</span>
-            <span className="text-muted">Parcelas</span>
+            <span className="text-muted">{t.plots}</span>
           </div>
           <div className="hidden md:block text-muted">|</div>
           <div className="flex items-center gap-2">
             <span className="text-3xl font-bold gradient-text">30+</span>
-            <span className="text-muted">Proyectos</span>
+            <span className="text-muted">{t.projects}</span>
           </div>
         </div>
       </div>
