@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ArrowLeft, Bed, Bath, Maximize, MapPin, ExternalLink, Crop, ChevronLeft, ChevronRight } from 'lucide-react';
 import { allProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
@@ -49,6 +50,53 @@ export default function PropertyDetailPage() {
     setSelectedImageIndex((prev) =>
       prev === 0 ? property.images.length - 1 : prev - 1
     );
+  };
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
+
+  // Get similar properties (same type, nearby, with coordinates)
+  const similarProperties = property.coordinates
+    ? allProperties
+        .filter((p) => {
+          if (p.id === property.id || !p.coordinates) return false;
+          if (p.type !== property.type) return false;
+          const distance = calculateDistance(
+            property.coordinates!.lat,
+            property.coordinates!.lng,
+            p.coordinates.lat,
+            p.coordinates.lng
+          );
+          return distance <= 5; // Within 5km
+        })
+        .map((p) => ({
+          ...p,
+          distance: calculateDistance(
+            property.coordinates!.lat,
+            property.coordinates!.lng,
+            p.coordinates!.lat,
+            p.coordinates!.lng
+          ),
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 3)
+    : [];
+
+  const formatDistance = (distanceKm: number) => {
+    if (distanceKm < 1) {
+      return `a menos de ${Math.round(distanceKm * 1000)} metros`;
+    }
+    return `a ${distanceKm.toFixed(1)} km`;
   };
 
   return (
@@ -261,6 +309,69 @@ export default function PropertyDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Similar Properties */}
+        {similarProperties.length > 0 && (
+          <div className="mt-16 pt-8 border-t border-border">
+            <h2 className="text-3xl font-bold mb-6">Propiedades similares cerca</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {similarProperties.map((similar) => (
+                <Link
+                  key={similar.id}
+                  href={`/propiedad/${similar.id}`}
+                  className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={similar.images[0]}
+                      alt={similar.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                    {similar.badge && (
+                      <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
+                        {similar.badge}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center text-sm text-primary mb-2">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      <span>{formatDistance(similar.distance)}</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2 line-clamp-1">{similar.title}</h3>
+                    <p className="text-muted text-sm mb-3 flex items-center">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      {similar.location}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl font-bold gradient-text">
+                        {formatPrice(similar.price)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-muted mt-3 pt-3 border-t border-border">
+                      {similar.specs.bedrooms && (
+                        <div className="flex items-center gap-1">
+                          <Bed className="w-4 h-4" />
+                          <span>{similar.specs.bedrooms}</span>
+                        </div>
+                      )}
+                      {similar.specs.bathrooms && (
+                        <div className="flex items-center gap-1">
+                          <Bath className="w-4 h-4" />
+                          <span>{similar.specs.bathrooms}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <Maximize className="w-4 h-4" />
+                        <span>{similar.specs.size}m²</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

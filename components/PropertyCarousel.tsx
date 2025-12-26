@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import type { Property } from '@/data/properties';
 import PropertyCard from './PropertyCard';
@@ -26,19 +27,27 @@ export default function PropertyCarousel({
     }
   };
 
+  // Map carousel id to search type
+  const getSearchType = () => {
+    if (id === 'casas') return 'house';
+    if (id === 'inversiones') return 'investment';
+    if (id === 'parcelas') return 'plot';
+    return 'all';
+  };
+
   return (
     <section className="py-16 gradient-border" id={id}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl font-bold">{title}</h2>
-          <a
-            href={`#${id}-all`}
+          <Link
+            href={`/buscar?type=${getSearchType()}`}
             className="flex items-center gap-1 text-primary hover:text-orange-300 transition-colors group"
           >
             <span>Ver todo</span>
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </a>
+          </Link>
         </div>
 
         {/* Horizontal Scrollable Row */}

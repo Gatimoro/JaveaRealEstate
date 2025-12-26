@@ -10,6 +10,7 @@ export interface Property {
   features?: string[];
   sourceUrl?: string;
   priceHistory?: { date: string; price: number }[];
+  coordinates?: { lat: number; lng: number };
   specs: {
     bedrooms?: number;
     bathrooms?: number;
@@ -39,6 +40,7 @@ export const houses: Property[] = [
     description: 'Espectacular villa de diseño contemporáneo con impresionantes vistas panorámicas al Mediterráneo. Acabados de primera calidad, amplios espacios luminosos y jardín privado con piscina infinity.',
     features: ['Piscina', 'Vistas al mar', 'Jardín', 'Aire acondicionado', 'Calefacción', 'Parking'],
     sourceUrl: 'https://idealista.com/inmueble/98765432',
+    coordinates: { lat: 38.7650, lng: 0.1950 },
     specs: {
       bedrooms: 4,
       bathrooms: 3,
@@ -60,6 +62,7 @@ export const houses: Property[] = [
     description: 'Moderno apartamento recién reformado a escasos metros de la playa del Arenal. Terraza con vistas al mar, cocina equipada y plaza de garaje incluida.',
     features: ['Vistas al mar', 'Terraza', 'Garaje', 'Aire acondicionado', 'Cerca de la playa'],
     sourceUrl: 'https://idealista.com/inmueble/87654321',
+    coordinates: { lat: 38.7897, lng: 0.1767 },
     specs: {
       bedrooms: 2,
       bathrooms: 2,
@@ -81,6 +84,7 @@ export const houses: Property[] = [
     description: 'Encantadora casa de campo de estilo mediterráneo tradicional rodeada de naturaleza. Amplia parcela con árboles frutales, piscina y zona de barbacoa. Ideal para familias.',
     features: ['Piscina', 'Jardín', 'Barbacoa', 'Chimenea', 'Zona tranquila', 'Parking'],
     sourceUrl: 'https://idealista.com/inmueble/76543210',
+    coordinates: { lat: 38.7800, lng: 0.1600 },
     specs: {
       bedrooms: 5,
       bathrooms: 4,
@@ -102,6 +106,7 @@ export const houses: Property[] = [
     description: 'Acogedor bungalow a pocos minutos del puerto deportivo. Perfecto para segunda residencia o inversión. Comunidad con piscina y zonas verdes.',
     features: ['Piscina comunitaria', 'Terraza', 'Aire acondicionado', 'Cerca del puerto', 'Amueblado'],
     sourceUrl: 'https://idealista.com/inmueble/65432109',
+    coordinates: { lat: 38.7950, lng: 0.1850 },
     specs: {
       bedrooms: 3,
       bathrooms: 2,
@@ -120,6 +125,7 @@ export const houses: Property[] = [
       'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&h=500&fit=crop',
       'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&h=500&fit=crop',
     ],
+    coordinates: { lat: 38.7600, lng: 0.1900 },
     badge: 'Destacado',
     description: 'Lujosa villa de obra nueva con acabados premium y diseño exclusivo. Piscina infinita con cascada, jardín mediterráneo y vistas despejadas. Domótica integrada.',
     features: ['Piscina', 'Jardín', 'Domótica', 'Aire acondicionado', 'Garaje', 'Trastero'],
