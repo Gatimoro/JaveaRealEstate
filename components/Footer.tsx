@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Logo & Description */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg" />
+              <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg" />
               <span className="text-xl font-bold">Jávea Real Estate</span>
             </div>
             <p className="text-sm text-muted">

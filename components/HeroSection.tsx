@@ -1,6 +1,22 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 
 export default function HeroSection() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/buscar?q=${encodeURIComponent(searchQuery)}`);
+    } else {
+      router.push('/buscar');
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20" id="inicio">
       {/* Background Image with Gradient Overlay */}
@@ -22,7 +38,7 @@ export default function HeroSection() {
           <span className="gradient-text">Jávea</span>
         </h1>
 
-        <div className="w-32 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto mb-6" />
+        <div className="w-32 h-1 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto mb-6" />
 
         <p className="text-xl md:text-2xl text-muted mb-12 max-w-2xl mx-auto">
           Parcelas, obra nueva e inmuebles en la Costa Blanca
@@ -30,16 +46,21 @@ export default function HeroSection() {
 
         {/* Search Bar */}
         <div className="max-w-3xl mx-auto mb-16">
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar propiedades en Jávea..."
               className="w-full px-6 py-4 pr-14 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-lg hover:bg-cyan-500 transition-colors">
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-lg hover:bg-orange-500 transition-colors"
+            >
               <Search className="w-6 h-6" />
             </button>
-          </div>
+          </form>
         </div>
 
         {/* Stats */}
