@@ -218,8 +218,12 @@ function SearchContent() {
           {/* Results Grid */}
           <div className="flex-1">
             {filteredProperties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredProperties.map((property) => renderPropertyCard(property))}
+              <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))' }}>
+                {filteredProperties.map((property) => (
+                  <div key={property.id} className="w-full">
+                    {renderPropertyCard(property)}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-center py-16">
