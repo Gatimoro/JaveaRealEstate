@@ -23,7 +23,6 @@ sudo -u postgres createuser --interactive
 npm install prisma @prisma/client
 npx prisma init
 ```
-
 **Prisma Schema Example:**
 ```prisma
 model Property {
