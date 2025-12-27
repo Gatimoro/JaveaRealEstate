@@ -96,8 +96,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <MiralunaLogo className="w-12 h-12 md:w-14 md:h-14 flex-shrink-0" />
-            <span className="text-2xl md:text-3xl font-bold">
+            <MiralunaLogo className="w-10 h-10 md:w-11 md:h-11 flex-shrink-0" />
+            <span className="text-3xl md:text-4xl font-bold">
               mira<span className="text-primary">luna</span>
             </span>
           </Link>
