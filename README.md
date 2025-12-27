@@ -405,7 +405,29 @@ CREATE POLICY "Admins can manage properties"
 
 ## 🚀 Deployment
 
-### Vercel (Frontend)
+### Vercel (Frontend) - **START HERE**
+
+📘 **[Complete Deployment Guide →](./VERCEL_DEPLOYMENT.md)**
+
+For a step-by-step guide to deploying to Vercel with authentication, see the [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) guide.
+
+**Quick checklist:**
+- [ ] Set up Google OAuth credentials
+- [ ] Configure environment variables in Vercel
+- [ ] Update redirect URIs in Google Console
+- [ ] Deploy and verify authentication works
+
+**Required Environment Variables in Vercel:**
+```bash
+NEXTAUTH_URL=https://your-app.vercel.app
+NEXTAUTH_SECRET=<generated-secret>
+GOOGLE_CLIENT_ID=<your-client-id>
+GOOGLE_CLIENT_SECRET=<your-client-secret>
+```
+
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed instructions.
+
+### Vercel CLI Deployment
 
 ```bash
 # Install Vercel CLI
@@ -414,12 +436,9 @@ npm i -g vercel
 # Deploy
 vercel
 
-# Add environment variables in Vercel dashboard:
-# NEXT_PUBLIC_SUPABASE_URL
-# NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Deploy to production
+vercel --prod
 ```
-
-Or connect GitHub repo for automatic deployments.
 
 ### Supabase (Backend)
 
@@ -484,11 +503,13 @@ refactor: Optimize queries
 
 ## 📚 Documentation
 
-- **[SETUP.md](docs/SETUP.md)** - Complete Supabase setup guide
-- **[MIGRATION.md](docs/MIGRATION.md)** - Migrate from static to database
-- **[API.md](docs/API.md)** - API reference and examples
-- **[SCRAPER.md](docs/SCRAPER.md)** - Web scraping guide
-- **[TODO.md](TODO.md)** - Roadmap and next steps
+- **[VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md)** - 🚀 **Deploy to Vercel (START HERE)**
+- **[IMPLEMENTATION.md](IMPLEMENTATION.md)** - Current implementation status and features
+- **[.env.example](.env.example)** - Environment variables template
+- **[SETUP.md](docs/SETUP.md)** - Complete Supabase setup guide (future)
+- **[MIGRATION.md](docs/MIGRATION.md)** - Migrate from static to database (future)
+- **[API.md](docs/API.md)** - API reference and examples (future)
+- **[SCRAPER.md](docs/SCRAPER.md)** - Web scraping guide (future)
 
 ## 🔄 Migration Path
 
