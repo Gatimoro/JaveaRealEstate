@@ -6,34 +6,35 @@ export default function MiralunaLogo({ className = "w-8 h-8" }: { className?: st
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* Filled hourglass with cutout triangle
-          Two large filled triangles (2n size) with a larger centered triangle (n size) cut out
-          Cutout triangles are centered and don't touch at the middle
+      <defs>
+        <mask id="hourglass-mask">
+          {/* White area = visible, black area = transparent cutout */}
+          <rect width="100" height="115" fill="white" />
+          {/* Bottom cutout triangle (black = creates transparency) */}
+          <path d="M 31 100 L 69 100 L 50 69 Z" fill="black" />
+          {/* Top cutout triangle (black = creates transparency) */}
+          <path d="M 31 15 L 69 15 L 50 46 Z" fill="black" />
+        </mask>
+      </defs>
+
+      {/* Filled hourglass with true transparent cutouts
+          Outer triangles filled, inner triangles cut out for true transparency
+          Perfectly centered and symmetric around y=57.5
       */}
 
-      {/* Bottom filled triangle (pointing up) - size 2n */}
-      <path
-        d="M 14 112 L 86 112 L 50 48 Z"
-        fill="#f97316"
-      />
+      <g mask="url(#hourglass-mask)">
+        {/* Bottom filled triangle (pointing up) */}
+        <path
+          d="M 14 112 L 86 112 L 50 48 Z"
+          fill="#f97316"
+        />
 
-      {/* Top filled triangle (pointing down) - size 2n */}
-      <path
-        d="M 14 3 L 86 3 L 50 67 Z"
-        fill="#f97316"
-      />
-
-      {/* Bottom cutout triangle - larger and centered, apex at y=62 */}
-      <path
-        d="M 35 92 L 65 92 L 50 62 Z"
-        fill="#0a0a0a"
-      />
-
-      {/* Top cutout triangle - larger and centered, apex at y=53 */}
-      <path
-        d="M 35 23 L 65 23 L 50 53 Z"
-        fill="#0a0a0a"
-      />
+        {/* Top filled triangle (pointing down) */}
+        <path
+          d="M 14 3 L 86 3 L 50 67 Z"
+          fill="#f97316"
+        />
+      </g>
     </svg>
   );
 }
