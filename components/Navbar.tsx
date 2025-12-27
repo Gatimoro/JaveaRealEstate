@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Globe, ChevronDown, User, LogOut, Search } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useLanguage, locales, languageNames, languageFlags, type Locale } from '@/lib/i18n';
@@ -16,6 +16,10 @@ export default function Navbar() {
   const { locale, setLocale } = useLanguage();
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Check if we're on the homepage
+  const isHomepage = pathname === '/';
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,8 +96,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <MiralunaLogo className="w-10 h-10 flex-shrink-0" />
-            <span className="text-xl md:text-2xl font-bold">
+            <MiralunaLogo className="w-12 h-12 md:w-14 md:h-14 flex-shrink-0" />
+            <span className="text-2xl md:text-3xl font-bold">
               mira<span className="text-primary">luna</span>
             </span>
           </Link>
@@ -119,19 +123,21 @@ export default function Navbar() {
               {t.contacto}
             </a>
 
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  className="w-full px-4 py-2 pl-10 bg-card/80 backdrop-blur-sm text-foreground placeholder:text-muted-foreground/60 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
-              </div>
-            </form>
+            {/* Search Bar - Hidden on homepage */}
+            {!isHomepage && (
+              <form onSubmit={handleSearch} className="flex-1 max-w-md">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t.searchPlaceholder}
+                    className="w-full px-4 py-2 pl-10 bg-background/95 backdrop-blur-sm text-foreground placeholder:text-muted-foreground border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                </div>
+              </form>
+            )}
           </div>
 
           {/* Right side: Auth + Language */}
