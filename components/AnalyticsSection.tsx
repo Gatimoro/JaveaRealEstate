@@ -1,7 +1,56 @@
+'use client';
+
 import { TrendingUp, Home, MapPin, Euro } from 'lucide-react';
 import { houses, investments, plots } from '@/data/properties';
+import { useLanguage } from '@/lib/i18n';
 
 export default function AnalyticsSection() {
+  const { locale } = useLanguage();
+
+  const translations = {
+    es: {
+      avgHousePrice: 'Precio Medio Casas',
+      avgInvestmentPrice: 'Precio Medio Inversiones',
+      avgPlotPrice: 'Precio Medio Parcelas',
+      avgOverallPrice: 'Precio Medio General',
+      vsPrevMonth: 'vs. mes anterior',
+      avgSize: 'tamaño medio',
+      title: 'Mercado Inmobiliario en Jávea',
+      subtitle: 'Datos actualizados del mercado local de propiedades',
+      propertyValueQuestion: '¿Quieres conocer el valor de tu propiedad?',
+      propertyValueDesc: 'Obtén una valoración gratuita de tu propiedad en Jávea',
+      requestValuation: 'Solicitar Valoración',
+    },
+    en: {
+      avgHousePrice: 'Average House Price',
+      avgInvestmentPrice: 'Average Investment Price',
+      avgPlotPrice: 'Average Plot Price',
+      avgOverallPrice: 'Overall Average Price',
+      vsPrevMonth: 'vs. previous month',
+      avgSize: 'average size',
+      title: 'Real Estate Market in Jávea',
+      subtitle: 'Updated data from the local property market',
+      propertyValueQuestion: 'Want to know your property value?',
+      propertyValueDesc: 'Get a free valuation of your property in Jávea',
+      requestValuation: 'Request Valuation',
+    },
+    ru: {
+      avgHousePrice: 'Средняя цена домов',
+      avgInvestmentPrice: 'Средняя цена инвестиций',
+      avgPlotPrice: 'Средняя цена участков',
+      avgOverallPrice: 'Общая средняя цена',
+      vsPrevMonth: 'по сравнению с прошлым месяцем',
+      avgSize: 'средний размер',
+      title: 'Рынок недвижимости в Хавеа',
+      subtitle: 'Актуальные данные местного рынка недвижимости',
+      propertyValueQuestion: 'Хотите узнать стоимость вашей недвижимости?',
+      propertyValueDesc: 'Получите бесплатную оценку вашей недвижимости в Хавеа',
+      requestValuation: 'Запросить оценку',
+    },
+  };
+
+  const t = translations[locale];
+
   // Calculate analytics
   const totalProperties = houses.length + investments.length + plots.length;
 
@@ -29,7 +78,7 @@ export default function AnalyticsSection() {
   );
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
@@ -40,31 +89,31 @@ export default function AnalyticsSection() {
   const stats = [
     {
       icon: Home,
-      title: 'Precio Medio Casas',
+      title: t.avgHousePrice,
       value: formatPrice(avgHousePrice),
       change: '+5.2%',
-      description: 'vs. mes anterior',
+      description: t.vsPrevMonth,
     },
     {
       icon: TrendingUp,
-      title: 'Precio Medio Inversiones',
+      title: t.avgInvestmentPrice,
       value: formatPrice(avgInvestmentPrice),
       change: '+8.1%',
-      description: 'vs. mes anterior',
+      description: t.vsPrevMonth,
     },
     {
       icon: MapPin,
-      title: 'Precio Medio Parcelas',
+      title: t.avgPlotPrice,
       value: formatPrice(avgPlotPrice),
       change: '+3.4%',
-      description: 'vs. mes anterior',
+      description: t.vsPrevMonth,
     },
     {
       icon: Euro,
-      title: 'Precio Medio General',
+      title: t.avgOverallPrice,
       value: formatPrice(avgOverallPrice),
       change: '+6.2%',
-      description: `${avgHouseSize}m² tamaño medio`,
+      description: `${avgHouseSize}m² ${t.avgSize}`,
     },
   ];
 
@@ -73,10 +122,10 @@ export default function AnalyticsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Mercado Inmobiliario en Jávea
+            {t.title}
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            Datos actualizados del mercado local de propiedades
+            {t.subtitle}
           </p>
         </div>
 
@@ -108,14 +157,14 @@ export default function AnalyticsSection() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold mb-1">
-                ¿Quieres conocer el valor de tu propiedad?
+                {t.propertyValueQuestion}
               </h3>
               <p className="text-sm text-muted">
-                Obtén una valoración gratuita de tu propiedad en Jávea
+                {t.propertyValueDesc}
               </p>
             </div>
             <button className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-orange-500 transition-colors font-semibold whitespace-nowrap">
-              Solicitar Valoración
+              {t.requestValuation}
             </button>
           </div>
         </div>

@@ -1,9 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import type { Property } from '@/data/properties';
 import PropertyCard from './PropertyCard';
 import InvestmentCard from './InvestmentCard';
 import PlotCard from './PlotCard';
+import { useLanguage } from '@/lib/i18n';
 
 interface PropertyCarouselProps {
   title: string;
@@ -16,6 +19,15 @@ export default function PropertyCarousel({
   properties,
   id,
 }: PropertyCarouselProps) {
+  const { locale } = useLanguage();
+
+  const translations = {
+    es: { viewAll: 'Ver todo' },
+    en: { viewAll: 'View all' },
+    ru: { viewAll: 'Смотреть все' },
+  };
+
+  const t = translations[locale];
   const renderCard = (property: Property) => {
     switch (property.type) {
       case 'investment':
@@ -45,7 +57,7 @@ export default function PropertyCarousel({
             href={`/buscar?type=${getSearchType()}`}
             className="flex items-center gap-1 text-primary hover:text-orange-300 transition-colors group"
           >
-            <span>Ver todo</span>
+            <span>{t.viewAll}</span>
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
