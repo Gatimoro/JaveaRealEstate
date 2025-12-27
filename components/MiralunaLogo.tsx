@@ -5,30 +5,20 @@ export default function MiralunaLogo({ className = "w-8 h-8" }: { className?: st
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Top triangle (pointing down) */}
+      {/* Bottom triangle (pointing up) - base at bottom, tip touches middle */}
       <path
-        d="M 50 15 L 80 65 L 20 65 Z"
-        fill="#f97316"
-        stroke="none"
-      />
-      {/* Top inner triangle (white/hollow) */}
-      <path
-        d="M 50 30 L 70 60 L 30 60 Z"
-        fill="white"
-        stroke="none"
+        d="M 25 75 L 75 75 L 50 50 Z"
+        fill="none"
+        stroke="#f97316"
+        strokeWidth="3"
       />
 
-      {/* Bottom triangle (pointing up) - reflected */}
+      {/* Top triangle (pointing down) - base at top, tip touches middle */}
       <path
-        d="M 50 85 L 80 35 L 20 35 Z"
-        fill="#f97316"
-        stroke="none"
-      />
-      {/* Bottom inner triangle (white/hollow) */}
-      <path
-        d="M 50 70 L 70 40 L 30 40 Z"
-        fill="white"
-        stroke="none"
+        d="M 25 25 L 75 25 L 50 50 Z"
+        fill="none"
+        stroke="#f97316"
+        strokeWidth="3"
       />
     </svg>
   );

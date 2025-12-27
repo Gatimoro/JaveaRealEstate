@@ -233,14 +233,15 @@ export function getLocalizedField<T extends Record<string, any>>(
   field: string,
   locale: Locale
 ): string {
-  // Try locale-specific field first
-  const localizedKey = `${field}_${locale}` as keyof T;
+  // Try locale-specific field first (camelCase: descriptionEn, titleRu, etc.)
+  const localeSuffix = locale.charAt(0).toUpperCase() + locale.slice(1);
+  const localizedKey = `${field}${localeSuffix}` as keyof T;
   if (obj[localizedKey]) {
     return obj[localizedKey] as string;
   }
 
-  // Fallback to Spanish
-  const esKey = `${field}_es` as keyof T;
+  // Fallback to Spanish (camelCase: descriptionEs, titleEs, etc.)
+  const esKey = `${field}Es` as keyof T;
   if (obj[esKey]) {
     return obj[esKey] as string;
   }
@@ -260,14 +261,15 @@ export function getLocalizedArray<T extends Record<string, any>>(
   field: string,
   locale: Locale
 ): string[] {
-  // Try locale-specific field first
-  const localizedKey = `${field}_${locale}` as keyof T;
+  // Try locale-specific field first (camelCase: featuresEn, featuresRu, etc.)
+  const localeSuffix = locale.charAt(0).toUpperCase() + locale.slice(1);
+  const localizedKey = `${field}${localeSuffix}` as keyof T;
   if (obj[localizedKey] && Array.isArray(obj[localizedKey])) {
     return obj[localizedKey] as string[];
   }
 
-  // Fallback to Spanish
-  const esKey = `${field}_es` as keyof T;
+  // Fallback to Spanish (camelCase: featuresEs, etc.)
+  const esKey = `${field}Es` as keyof T;
   if (obj[esKey] && Array.isArray(obj[esKey])) {
     return obj[esKey] as string[];
   }

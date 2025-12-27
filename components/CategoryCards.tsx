@@ -1,23 +1,57 @@
+'use client';
+
 import { Home, TrendingUp, MapPin } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export default function CategoryCards() {
+  const { locale } = useLanguage();
+
+  const translations = {
+    es: {
+      housesTitle: 'Casas y Pisos',
+      housesDesc: 'Propiedades residenciales',
+      investmentsTitle: 'Oportunidades de Inversión',
+      investmentsDesc: 'Proyectos con alta rentabilidad',
+      plotsTitle: 'Parcelas',
+      plotsDesc: 'Terrenos edificables',
+    },
+    en: {
+      housesTitle: 'Houses & Apartments',
+      housesDesc: 'Residential properties',
+      investmentsTitle: 'Investment Opportunities',
+      investmentsDesc: 'High-yield projects',
+      plotsTitle: 'Land Plots',
+      plotsDesc: 'Buildable land',
+    },
+    ru: {
+      housesTitle: 'Дома и квартиры',
+      housesDesc: 'Жилая недвижимость',
+      investmentsTitle: 'Инвестиционные возможности',
+      investmentsDesc: 'Проекты с высокой доходностью',
+      plotsTitle: 'Участки',
+      plotsDesc: 'Земля под застройку',
+    },
+  };
+
+  const t = translations[locale];
+
   const categories = [
     {
       icon: Home,
-      title: 'Casas y Pisos',
-      description: 'Propiedades residenciales',
+      title: t.housesTitle,
+      description: t.housesDesc,
       href: '#casas',
     },
     {
       icon: TrendingUp,
-      title: 'Oportunidades de Inversión',
-      description: 'Proyectos con alta rentabilidad',
+      title: t.investmentsTitle,
+      description: t.investmentsDesc,
       href: '#inversiones',
     },
     {
       icon: MapPin,
-      title: 'Parcelas',
-      description: 'Terrenos edificables',
+      title: t.plotsTitle,
+      description: t.plotsDesc,
       href: '#parcelas',
     },
   ];

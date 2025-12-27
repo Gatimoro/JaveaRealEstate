@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { LanguageProvider } from '@/lib/i18n';
+import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
   title: 'Jávea Real Estate - Encuentra tu lugar en la Costa Blanca',
@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html lang="es" className="scroll-smooth">
       <body className="font-sans antialiased">
-        <LanguageProvider>
+        <Providers>
           {children}
-        </LanguageProvider>
+        </Providers>
       </body>
     </html>
   );
