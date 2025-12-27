@@ -170,6 +170,12 @@ export default function PropertyDetailPage() {
         .map((p) => ({
           ...p,
           priceDiff: Math.abs(p.price - property.price),
+          distance: p.coordinates ? calculateDistance(
+            property.coordinates!.lat,
+            property.coordinates!.lng,
+            p.coordinates.lat,
+            p.coordinates.lng
+          ) : undefined,
         }))
         .sort((a, b) => a.priceDiff - b.priceDiff)
         .slice(0, 3);
@@ -458,10 +464,12 @@ export default function PropertyDetailPage() {
                     )}
                   </div>
                     <div className="p-4">
-                      <div className="flex items-center text-sm text-primary mb-2">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        <span>{formatDistance(similar.distance)}</span>
-                      </div>
+                      {similar.distance !== undefined && (
+                        <div className="flex items-center text-sm text-primary mb-2">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          <span>{formatDistance(similar.distance)}</span>
+                        </div>
+                      )}
                       <h3 className="font-bold text-lg mb-2 line-clamp-1">{similarTitle}</h3>
                       <p className="text-muted text-sm mb-3 flex items-center">
                         <MapPin className="w-4 h-4 mr-1" />
