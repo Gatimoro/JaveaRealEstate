@@ -3,7 +3,7 @@
 import { Maximize, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
-import { useLanguage, getLocalizedField } from '@/lib/i18n';
+import { useLanguage, getPropertyTitle } from '@/lib/i18n';
 
 interface PlotCardProps {
   property: Property;
@@ -29,7 +29,7 @@ export default function PlotCard({ property }: PlotCardProps) {
     }).format(price);
   };
 
-  const title = getLocalizedField(property, 'title', locale) || property.title;
+  const title = getPropertyTitle(property, locale);
 
   return (
     <Link href={`/propiedad/${property.id}`} className="group flex-shrink-0 w-full min-w-[280px] max-w-[320px] bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">

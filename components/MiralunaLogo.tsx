@@ -1,24 +1,34 @@
 export default function MiralunaLogo({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox="0 0 100 115"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid meet"
     >
-      {/* Bottom triangle (pointing up) - base at bottom, tip touches middle */}
+      {/* Equilateral triangles forming hourglass
+          For equilateral: height = base × √3/2 ≈ base × 0.866
+          Base width: 64 units → Height: ~55.4 units
+      */}
+
+      {/* Bottom triangle (pointing up) - equilateral */}
       <path
-        d="M 25 75 L 75 75 L 50 50 Z"
+        d="M 18 110 L 82 110 L 50 57.5 Z"
         fill="none"
         stroke="#f97316"
-        strokeWidth="3"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
 
-      {/* Top triangle (pointing down) - base at top, tip touches middle */}
+      {/* Top triangle (pointing down) - equilateral */}
       <path
-        d="M 25 25 L 75 25 L 50 50 Z"
+        d="M 18 5 L 82 5 L 50 57.5 Z"
         fill="none"
         stroke="#f97316"
-        strokeWidth="3"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
