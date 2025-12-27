@@ -70,7 +70,7 @@ export default function HeroSection() {
           <span className="gradient-text">Jávea</span>
         </h1>
 
-        <div className="w-32 h-1 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto mb-6" />
+        <div className="w-32 h-1.5 bg-primary mx-auto mb-6 rounded-full" />
 
         <p className="text-xl md:text-2xl text-muted mb-12 max-w-2xl mx-auto">
           {t.subtitle}
