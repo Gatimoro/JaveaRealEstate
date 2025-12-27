@@ -11,15 +11,19 @@ A modern, multilingual real estate aggregation platform for Jávea, Spain. Built
 
 ### ✅ Current Implementation
 
+- **🔐 Authentication** - Google OAuth sign-in with NextAuth.js v5
+- **❤️ Save properties** - Authenticated users can favorite properties with localStorage persistence
+- **👤 User profiles** - View saved properties in dedicated profile page
 - **🖼️ Multi-image property listings** - Gallery with prev/next navigation and thumbnails
-- **🔍 Advanced search** - Filters for price, bedrooms, bathrooms, size, and type
+- **🔍 Advanced search** - Persistent search bar in navbar + filters for price, bedrooms, bathrooms, size, and type
+- **📄 Pagination** - 40 properties per page on desktop, 20 on mobile with smart page controls
 - **📍 Geospatial features** - Similar properties within 5km using Haversine formula
 - **🌍 Multilingual support** - Spanish (primary), English, and Russian translations
 - **📱 Responsive design** - Mobile-first, optimized for all screen sizes
 - **🏠 Property types** - Houses/Apartments, Investment opportunities, Land/Plots
-- **🎨 Modern UI** - Orange theme, smooth animations, glassmorphism effects
+- **🎨 Modern UI** - Orange theme with refined logo, smooth animations, glassmorphism effects
 - **📊 Analytics section** - Market statistics and average prices by type
-- **🔗 Wired navigation** - All links functional (search by type, home, property details)
+- **🔗 Wired navigation** - All links functional (search by type, home, property details, profile)
 - **📏 Optimized layout** - Denser cards, efficient grid system
 
 ### 🚀 Ready for Supabase Integration
@@ -60,33 +64,42 @@ A modern, multilingual real estate aggregation platform for Jávea, Spain. Built
 JaveaRealEstate/
 ├── app/                          # Next.js App Router
 │   ├── page.tsx                 # ✅ Landing page with carousels
-│   ├── layout.tsx               # Root layout
+│   ├── layout.tsx               # ✅ Root layout with providers
 │   ├── globals.css              # ✅ Custom CSS (orange theme)
-│   ├── buscar/                  # ✅ Search results
+│   ├── api/auth/[...nextauth]/  # ✅ NextAuth.js API routes
+│   │   └── route.ts
+│   ├── buscar/                  # ✅ Search results with pagination
+│   │   └── page.tsx
+│   ├── profile/                 # ✅ User profile with saved properties
 │   │   └── page.tsx
 │   └── propiedad/[id]/          # ✅ Property detail page
 │       └── page.tsx
 │
 ├── components/                   # React Components
-│   ├── Navbar.tsx               # ✅ Navigation with links
+│   ├── Navbar.tsx               # ✅ Navigation with search bar & auth menu
 │   ├── HeroSection.tsx          # ✅ Hero with functional search
 │   ├── CategoryCards.tsx        # Property type cards
 │   ├── PropertyCarousel.tsx     # ✅ Carousel with "Ver todo" links
-│   ├── PropertyCard.tsx         # ✅ Responsive house card
-│   ├── InvestmentCard.tsx       # ✅ Responsive investment card
-│   ├── PlotCard.tsx             # ✅ Responsive plot card
+│   ├── PropertyCard.tsx         # ✅ Responsive house card with save button
+│   ├── InvestmentCard.tsx       # ✅ Responsive investment card with save button
+│   ├── PlotCard.tsx             # ✅ Responsive plot card with save button
+│   ├── SavePropertyButton.tsx   # ✅ Heart icon save/favorite button
+│   ├── MiralunaLogo.tsx         # ✅ Custom hourglass logo (refined)
 │   ├── AnalyticsSection.tsx     # ✅ Market statistics
 │   ├── CTASection.tsx           # Call-to-action
+│   ├── Providers.tsx            # ✅ Context providers wrapper
 │   └── Footer.tsx               # Site footer
 │
 ├── data/                         # Data Layer
 │   └── properties.ts            # ✅ Static data with translations
-│                                # (18 properties, ready for migration)
+│                                # (27 properties, ready for migration)
 │
-├── lib/                          # 🔜 To be created
-│   ├── supabase.ts              # Supabase client setup
-│   ├── api.ts                   # Data fetching functions
-│   ├── i18n.ts                  # Internationalization utilities
+├── lib/                          # ✅ Utilities
+│   ├── auth.ts                  # ✅ NextAuth.js configuration
+│   ├── i18n.tsx                 # ✅ Internationalization context
+│   ├── savedProperties.tsx      # ✅ Saved properties context
+│   ├── supabase.ts              # 🔜 Supabase client setup
+│   ├── api.ts                   # 🔜 Data fetching functions
 │   └── utils.ts                 # Helper functions
 │
 ├── types/                        # TypeScript Types
@@ -114,7 +127,8 @@ JaveaRealEstate/
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account (optional for now, free tier)
+- Google OAuth credentials (for authentication)
+- Supabase account (optional for database, free tier)
 - Git
 
 ### Installation
@@ -127,26 +141,35 @@ cd JaveaRealEstate
 # 2. Install dependencies
 npm install
 
-# 3. Start development server
+# 3. Set up environment variables
+cp .env.example .env.local
+
+# 4. Configure Google OAuth (Required)
+# Go to https://console.cloud.google.com/
+# Create OAuth 2.0 credentials
+# Add to .env.local:
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+NEXTAUTH_SECRET=$(openssl rand -base64 32)
+NEXTAUTH_URL=http://localhost:3000
+
+# 5. Start development server
 npm run dev
 
-# 4. Open browser
+# 6. Open browser
 # Navigate to http://localhost:3000
 ```
 
-### With Supabase (Optional)
+### With Supabase (Optional - Future Database)
 
 ```bash
-# 1. Copy environment template
-cp .env.example .env.local
-
-# 2. Add your Supabase credentials to .env.local
+# 1. Add Supabase credentials to .env.local
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxxx...
 
-# 3. Run database migrations (see docs/SETUP.md)
+# 2. Run database migrations (see docs/SETUP.md)
 
-# 4. Start with live data
+# 3. Start with live data
 npm run dev
 ```
 
@@ -286,26 +309,29 @@ Each property has separate fields for each language:
 ## 🔍 Search & Filtering
 
 ### Current Filters (app/buscar)
+✅ Persistent search bar in navbar (visible on all pages)
 ✅ Property type (house, investment, plot)
 ✅ Price range (min/max €)
 ✅ Bedrooms (minimum)
 ✅ Bathrooms (minimum)
 ✅ Size (minimum m²)
-✅ Text search (title, location, description)
+✅ Text search (title, location, description in all languages)
 ✅ URL parameters (?type=house, ?q=villa)
+✅ Pagination (40 per page desktop, 20 mobile)
 
 ### Grid Layout
 - Responsive CSS Grid: `repeat(auto-fill, minmax(260px, 1fr))`
 - Gap: 16px (optimized for density)
 - Sidebar filters on desktop
 - Collapsible filters on mobile
+- Smart pagination with ellipsis for large result sets
 
 ### Future Enhancements
 - 🔜 Area/neighborhood dropdown
 - 🔜 Feature checkboxes (pool, garage, etc.)
 - 🔜 Sort options (price, size, date added)
 - 🔜 Map view with markers
-- 🔜 Saved searches (requires auth)
+- 🔜 Saved searches (user-specific)
 
 ## 📈 Analytics & Insights
 
@@ -439,21 +465,20 @@ refactor: Optimize queries
 ## 🐛 Known Issues & Limitations
 
 ### Current Limitations
-- ⚠️ Using static data (18 sample properties)
-- ⚠️ No user authentication yet
+- ⚠️ Using static data (27 sample properties)
 - ⚠️ No admin panel for managing listings
 - ⚠️ Mock coordinates (need real geocoding)
 - ⚠️ No image upload (using Unsplash placeholders)
+- ⚠️ Saved properties stored in localStorage (will migrate to database)
 
 ### Future Work (TODO.md)
 - [ ] Connect to Supabase
+- [ ] Migrate saved properties from localStorage to database
 - [ ] Build web scraper for idealista/fotocasa
 - [ ] Implement geocoding service
-- [ ] Add user authentication
 - [ ] Create admin dashboard
 - [ ] Set up automated scraping cron jobs
-- [ ] Add email notifications
-- [ ] Implement favorites/saved searches
+- [ ] Add email notifications for price changes
 - [ ] Add map view with clustering
 - [ ] Build mobile app (React Native)
 

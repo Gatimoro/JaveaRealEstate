@@ -4,6 +4,7 @@ import { Bed, Bath, Maximize, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle } from '@/lib/i18n';
+import SavePropertyButton from './SavePropertyButton';
 
 interface PropertyCardProps {
   property: Property;
@@ -45,6 +46,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             {property.badge}
           </div>
         )}
+        <div className="absolute top-3 right-3">
+          <SavePropertyButton propertyId={property.id} />
+        </div>
       </div>
 
       {/* Content */}

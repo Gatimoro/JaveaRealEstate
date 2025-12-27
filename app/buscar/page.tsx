@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { allProperties } from '@/data/properties';
 import PropertyCard from '@/components/PropertyCard';
 import InvestmentCard from '@/components/InvestmentCard';
@@ -42,6 +42,10 @@ function SearchContent() {
       noResults: 'No se encontraron propiedades',
       clearFilters: 'Limpiar filtros',
       loading: 'Cargando...',
+      page: 'Página',
+      of: 'de',
+      previous: 'Anterior',
+      next: 'Siguiente',
     },
     en: {
       resultsFor: 'Results for',
@@ -66,6 +70,10 @@ function SearchContent() {
       noResults: 'No properties found',
       clearFilters: 'Clear filters',
       loading: 'Loading...',
+      page: 'Page',
+      of: 'of',
+      previous: 'Previous',
+      next: 'Next',
     },
     ru: {
       resultsFor: 'Результаты для',
@@ -90,12 +98,18 @@ function SearchContent() {
       noResults: 'Недвижимость не найдена',
       clearFilters: 'Очистить фильтры',
       loading: 'Загрузка...',
+      page: 'Страница',
+      of: 'из',
+      previous: 'Назад',
+      next: 'Далее',
     },
   };
 
   const t = translations[locale];
 
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(40);
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
@@ -104,6 +118,22 @@ function SearchContent() {
     minSize: '',
     type: typeParam,
   });
+
+  // Detect screen size for responsive items per page
+  useEffect(() => {
+    const updateItemsPerPage = () => {
+      setItemsPerPage(window.innerWidth < 768 ? 20 : 40);
+    };
+
+    updateItemsPerPage();
+    window.addEventListener('resize', updateItemsPerPage);
+    return () => window.removeEventListener('resize', updateItemsPerPage);
+  }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, filters]);
 
   const filteredProperties = useMemo(() => {
     return allProperties.filter((property) => {
@@ -160,6 +190,17 @@ function SearchContent() {
       minSize: '',
       type: 'all',
     });
+  };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProperties = filteredProperties.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const renderPropertyCard = (property: Property) => {
@@ -300,13 +341,99 @@ function SearchContent() {
           {/* Results Grid */}
           <div className="flex-1">
             {filteredProperties.length > 0 ? (
-              <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))' }}>
-                {filteredProperties.map((property) => (
-                  <div key={property.id} className="w-full">
-                    {renderPropertyCard(property)}
+              <>
+                <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))' }}>
+                  {paginatedProperties.map((property) => (
+                    <div key={property.id} className="w-full">
+                      {renderPropertyCard(property)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                      <span className="hidden sm:inline">{t.previous}</span>
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-2">
+                      {/* First page */}
+                      {currentPage > 3 && (
+                        <>
+                          <button
+                            onClick={() => goToPage(1)}
+                            className="w-10 h-10 flex items-center justify-center rounded-lg border border-border hover:border-primary transition-colors"
+                          >
+                            1
+                          </button>
+                          {currentPage > 4 && <span className="text-muted">...</span>}
+                        </>
+                      )}
+
+                      {/* Pages around current */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          return (
+                            page === currentPage ||
+                            page === currentPage - 1 ||
+                            page === currentPage + 1 ||
+                            page === currentPage - 2 ||
+                            page === currentPage + 2
+                          );
+                        })
+                        .map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => goToPage(page)}
+                            className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-colors ${
+                              currentPage === page
+                                ? 'bg-primary text-white border-primary'
+                                : 'border-border hover:border-primary'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+
+                      {/* Last page */}
+                      {currentPage < totalPages - 2 && (
+                        <>
+                          {currentPage < totalPages - 3 && <span className="text-muted">...</span>}
+                          <button
+                            onClick={() => goToPage(totalPages)}
+                            className="w-10 h-10 flex items-center justify-center rounded-lg border border-border hover:border-primary transition-colors"
+                          >
+                            {totalPages}
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border"
+                    >
+                      <span className="hidden sm:inline">{t.next}</span>
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+
+                    {/* Page Info */}
+                    <div className="text-sm text-muted sm:absolute sm:right-4">
+                      {t.page} {currentPage} {t.of} {totalPages}
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-16">
                 <p className="text-xl text-muted mb-4">{t.noResults}</p>

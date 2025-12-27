@@ -61,6 +61,7 @@ NEXTAUTH_URL=http://localhost:3000
 - **Status:** ✅ Fully Functional
 - **Features:**
   - Persistent search bar in navbar (visible on all pages)
+  - Improved text visibility with better color contrast
   - Full-text search across titles, descriptions, and locations
   - Advanced filters:
     - Property type (houses, investments, plots)
@@ -68,34 +69,55 @@ NEXTAUTH_URL=http://localhost:3000
     - Bedrooms (minimum)
     - Bathrooms (minimum)
     - Size (minimum m²)
+  - Pagination:
+    - 40 properties per page on desktop
+    - 20 properties per page on mobile
+    - Smart page number display with ellipsis
+    - Previous/Next buttons
+    - Auto-scroll to top on page change
   - Real-time filtering
   - Localized search (searches translated content)
   - Results count display
 
-### 5. **UI/UX Components**
+### 5. **Saved Properties & User Features**
+- **Status:** ✅ Fully Implemented
+- **Features:**
+  - Heart icon save button on all property cards
+  - localStorage persistence (keyed by user email)
+  - Profile page showing all saved properties
+  - Empty state with call-to-action
+  - Fully translated (ES/EN/RU)
+  - Sign-in prompt for unauthenticated users
+  - React Context API for global state
+  - Automatic sync with user session
+  - Save button prevents event propagation on card links
+
+### 6. **UI/UX Components**
 - **Status:** ✅ Fully Implemented
 - **Components:**
-  - **Navbar:** Logo, navigation links, search bar, auth menu, language selector
+  - **Navbar:** Logo, navigation links, search bar with improved visibility, auth menu with profile link, language selector
   - **Hero Section:** Welcome message and branding
   - **Category Cards:** Visual cards for property types
   - **Property Carousels:** Horizontal scrolling property showcases
-  - **Property Cards:** Specialized cards for houses, investments, and plots
+  - **Property Cards:** Specialized cards for houses, investments, and plots with save buttons
+  - **SavePropertyButton:** Reusable heart icon favorite button
   - **Property Detail Page:** Full property information with image gallery
+  - **Profile Page:** User profile with saved properties grid
   - **Analytics Section:** Market statistics (currently static data)
   - **About Section:** Explanation of the aggregator demo
   - **Contact Section:** Placeholder for future contact information
   - **CTA Section:** Call-to-action for listing properties
   - **Footer:** Branding, navigation, and info
 
-### 6. **Branding & Design**
+### 7. **Branding & Design**
 - **Status:** ✅ Implemented
 - **Brand Name:** Miraluna (Spanish: "Look at the moon")
-- **Logo:** Custom hourglass design (two equilateral triangles)
+- **Logo:** Custom hourglass design - refined with thicker stroke and reduced inner hole
 - **Color Scheme:** Orange primary color (#f97316)
 - **Design:** Modern, clean, responsive
 - **Typography:** System font stack optimized for readability
 
-### 7. **SEO Optimization**
+### 8. **SEO Optimization**
 - **Status:** ✅ Basic Implementation
 - **Implemented:**
   - Comprehensive meta tags
@@ -156,14 +178,16 @@ NEXTAUTH_URL=http://localhost:3000
   - Map view on search results
   - Area selection tool
 
-### 5. **User Features**
+### 5. **Advanced User Features**
 - **Status:** 🔴 Not Implemented
+- **Current:** ✅ Saved properties with localStorage (implemented)
 - **Needed:**
-  - Save favorite properties
-  - Property comparison tool
+  - Migrate saved properties to database
+  - Property comparison tool (side-by-side)
   - Email alerts for new listings
   - Price drop notifications
-  - Saved searches
+  - Saved searches with alerts
+  - User preferences and settings
 
 ### 6. **Admin Dashboard**
 - **Status:** 🔴 Not Implemented
