@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Globe, ChevronDown, User, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Globe, ChevronDown, User, LogOut, Search } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useLanguage, locales, languageNames, languageFlags, type Locale } from '@/lib/i18n';
 import MiralunaLogo from './MiralunaLogo';
@@ -11,8 +12,17 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { locale, setLocale } = useLanguage();
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,6 +53,7 @@ export default function Navbar() {
       signIn: 'Iniciar sesión',
       signOut: 'Cerrar sesión',
       myAccount: 'Mi cuenta',
+      searchPlaceholder: 'Buscar propiedades...',
     },
     en: {
       inicio: 'Home',
@@ -51,6 +62,7 @@ export default function Navbar() {
       signIn: 'Sign in',
       signOut: 'Sign out',
       myAccount: 'My account',
+      searchPlaceholder: 'Search properties...',
     },
     ru: {
       inicio: 'Главная',
@@ -59,6 +71,7 @@ export default function Navbar() {
       signIn: 'Войти',
       signOut: 'Выйти',
       myAccount: 'Мой аккаунт',
+      searchPlaceholder: 'Поиск недвижимости...',
     },
   };
 
@@ -82,26 +95,40 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Nav Links */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* Center: Nav Links + Search */}
+          <div className="hidden md:flex items-center gap-6 flex-1 justify-center max-w-2xl">
             <Link
               href="/"
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors whitespace-nowrap"
             >
               {t.inicio}
             </Link>
             <a
               href="#nosotros"
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors whitespace-nowrap"
             >
               {t.nosotros}
             </a>
             <a
               href="#contacto"
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors whitespace-nowrap"
             >
               {t.contacto}
             </a>
+
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="flex-1 max-w-md">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t.searchPlaceholder}
+                  className="w-full px-4 py-2 pl-10 bg-background/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+              </div>
+            </form>
           </div>
 
           {/* Right side: Auth + Language */}

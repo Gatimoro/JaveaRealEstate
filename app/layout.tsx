@@ -3,11 +3,15 @@ import './globals.css';
 import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
-  title: 'Jávea Real Estate - Encuentra tu lugar en la Costa Blanca',
+  title: {
+    default: 'Miraluna - Agregador de Inmuebles en Jávea y Costa Blanca',
+    template: '%s | Miraluna',
+  },
   description:
-    'Descubre casas, pisos, parcelas y oportunidades de inversión en Jávea, España. Tu portal de confianza para propiedades en la Costa Blanca.',
+    'Agregador de propiedades en Jávea y Costa Blanca. Encuentra casas, pisos, parcelas y oportunidades de inversión de múltiples fuentes en un solo lugar. Demo de plataforma inmobiliaria.',
   keywords: [
     'jávea',
+    'javea',
     'real estate',
     'costa blanca',
     'propiedades',
@@ -16,7 +20,39 @@ export const metadata: Metadata = {
     'parcelas',
     'inversión',
     'españa',
+    'agregador inmobiliario',
+    'property aggregator',
+    'mediterranean',
+    'arenal',
+    'montgo',
   ],
+  authors: [{ name: 'Miraluna' }],
+  creator: 'Miraluna',
+  publisher: 'Miraluna',
+  openGraph: {
+    title: 'Miraluna - Agregador de Inmuebles en Jávea y Costa Blanca',
+    description:
+      'Encuentra tu propiedad ideal en Jávea. Agregador de casas, apartamentos, parcelas y oportunidades de inversión en Costa Blanca.',
+    siteName: 'Miraluna',
+    locale: 'es_ES',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Miraluna - Agregador de Inmuebles en Jávea',
+    description: 'Encuentra tu propiedad ideal en Jávea y Costa Blanca',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({

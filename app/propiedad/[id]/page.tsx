@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Bed, Bath, Maximize, MapPin, ExternalLink, Crop, ChevronLeft, ChevronRight } from 'lucide-react';
 import { allProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
-import { useLanguage, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
+import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
 
 export default function PropertyDetailPage() {
   const params = useParams();
@@ -116,7 +116,7 @@ export default function PropertyDetailPage() {
     );
   }
 
-  const title = getLocalizedField(property, 'title', locale) || property.title;
+  const title = getPropertyTitle(property, locale);
   const description = getLocalizedField(property, 'description', locale) || property.description;
   const features = getLocalizedArray(property, 'features', locale);
 
@@ -405,7 +405,7 @@ export default function PropertyDetailPage() {
             <h2 className="text-3xl font-bold mb-6">{t.similarProperties}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarProperties.map((similar) => {
-                const similarTitle = getLocalizedField(similar, 'title', locale) || similar.title;
+                const similarTitle = getPropertyTitle(similar, locale);
                 return (
                   <Link
                     key={similar.id}
