@@ -7,7 +7,8 @@ export default function MiralunaLogo({ className = "w-8 h-8" }: { className?: st
       preserveAspectRatio="xMidYMid meet"
     >
       {/* Filled hourglass with cutout triangle
-          Two large filled triangles (2n size) with a smaller triangle (n size) cut out from center
+          Two large filled triangles (2n size) with a larger centered triangle (n size) cut out
+          Cutout triangles are centered and don't touch at the middle
       */}
 
       {/* Bottom filled triangle (pointing up) - size 2n */}
@@ -22,13 +23,15 @@ export default function MiralunaLogo({ className = "w-8 h-8" }: { className?: st
         fill="#f97316"
       />
 
-      {/* Center cutout triangle - size n - creates the hole */}
+      {/* Bottom cutout triangle - larger and centered, apex at y=62 */}
       <path
-        d="M 38 84 L 62 84 L 50 57.5 Z"
+        d="M 35 92 L 65 92 L 50 62 Z"
         fill="#0a0a0a"
       />
+
+      {/* Top cutout triangle - larger and centered, apex at y=53 */}
       <path
-        d="M 38 31 L 62 31 L 50 57.5 Z"
+        d="M 35 23 L 65 23 L 50 53 Z"
         fill="#0a0a0a"
       />
     </svg>
