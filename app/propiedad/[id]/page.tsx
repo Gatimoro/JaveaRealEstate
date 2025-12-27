@@ -154,32 +154,65 @@ export default function PropertyDetailPage() {
     return R * c; // Distance in km
   };
 
-  // Get similar properties (same type, nearby, with coordinates)
-  const similarProperties = property.coordinates
-    ? allProperties
-        .filter((p) => {
-          if (p.id === property.id || !p.coordinates) return false;
-          if (p.type !== property.type) return false;
-          const distance = calculateDistance(
-            property.coordinates!.lat,
-            property.coordinates!.lng,
-            p.coordinates.lat,
-            p.coordinates.lng
-          );
-          return distance <= 5; // Within 5km
-        })
+  // Get similar properties based on property type
+  const getSimilarProperties = () => {
+    if (!property.coordinates) return [];
+
+    const filtered = allProperties.filter((p) => {
+      if (p.id === property.id) return false;
+      if (p.type !== property.type) return false;
+      return true;
+    });
+
+    // For investments: prioritize similar price
+    if (property.type === 'investment') {
+      return filtered
         .map((p) => ({
           ...p,
-          distance: calculateDistance(
+          priceDiff: Math.abs(p.price - property.price),
+        }))
+        .sort((a, b) => a.priceDiff - b.priceDiff)
+        .slice(0, 3);
+    }
+
+    // For plots: similar price OR location
+    if (property.type === 'plot') {
+      return filtered
+        .filter((p) => p.coordinates !== undefined)
+        .map((p) => {
+          const distance = calculateDistance(
             property.coordinates!.lat,
             property.coordinates!.lng,
             p.coordinates!.lat,
             p.coordinates!.lng
-          ),
-        }))
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, 3)
-    : [];
+          );
+          const priceDiff = Math.abs(p.price - property.price);
+          // Score: combine price similarity and distance (lower is better)
+          const score = (priceDiff / property.price) * 50 + distance;
+          return { ...p, distance, score };
+        })
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 3);
+    }
+
+    // For houses: closest first (distance-based)
+    return filtered
+      .filter((p) => p.coordinates !== undefined)
+      .map((p) => ({
+        ...p,
+        distance: calculateDistance(
+          property.coordinates!.lat,
+          property.coordinates!.lng,
+          p.coordinates!.lat,
+          p.coordinates!.lng
+        ),
+      }))
+      .filter((p) => p.distance <= 5) // Within 5km
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 3);
+  };
+
+  const similarProperties = getSimilarProperties();
 
   const formatDistance = (distanceKm: number) => {
     if (distanceKm < 1) {

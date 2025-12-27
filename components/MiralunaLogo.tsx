@@ -6,30 +6,30 @@ export default function MiralunaLogo({ className = "w-8 h-8" }: { className?: st
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* Equilateral triangles forming hourglass
-          For equilateral: height = base × √3/2 ≈ base × 0.866
-          Base width: 64 units → Height: ~55.4 units
-          Extra thick stroke with tiny inner gap for maximum boldness
+      {/* Filled hourglass with cutout triangle
+          Two large filled triangles (2n size) with a smaller triangle (n size) cut out from center
       */}
 
-      {/* Bottom triangle (pointing up) - equilateral */}
+      {/* Bottom filled triangle (pointing up) - size 2n */}
       <path
-        d="M 18 110 L 82 110 L 50 57.8 Z"
-        fill="none"
-        stroke="#f97316"
-        strokeWidth="7.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M 14 112 L 86 112 L 50 48 Z"
+        fill="#f97316"
       />
 
-      {/* Top triangle (pointing down) - equilateral */}
+      {/* Top filled triangle (pointing down) - size 2n */}
       <path
-        d="M 18 5 L 82 5 L 50 57.2 Z"
-        fill="none"
-        stroke="#f97316"
-        strokeWidth="7.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M 14 3 L 86 3 L 50 67 Z"
+        fill="#f97316"
+      />
+
+      {/* Center cutout triangle - size n - creates the hole */}
+      <path
+        d="M 38 84 L 62 84 L 50 57.5 Z"
+        fill="#0a0a0a"
+      />
+      <path
+        d="M 38 31 L 62 31 L 50 57.5 Z"
+        fill="#0a0a0a"
       />
     </svg>
   );
