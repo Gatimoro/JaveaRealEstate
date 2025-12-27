@@ -4,6 +4,7 @@ import { Bed, Bath, Maximize, MapPin, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle } from '@/lib/i18n';
+import SavePropertyButton from './SavePropertyButton';
 
 interface InvestmentCardProps {
   property: Property;
@@ -45,13 +46,16 @@ export default function InvestmentCard({ property }: InvestmentCardProps) {
             {property.badge}
           </div>
         )}
-        {/* ROI Badge */}
-        {property.specs.roi && (
-          <div className="absolute top-3 right-3 px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-full flex items-center gap-1">
-            <TrendingUp className="w-4 h-4" />
-            {property.specs.roi}% ROI
-          </div>
-        )}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+          <SavePropertyButton propertyId={property.id} />
+          {/* ROI Badge */}
+          {property.specs.roi && (
+            <div className="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-full flex items-center gap-1">
+              <TrendingUp className="w-4 h-4" />
+              {property.specs.roi}% ROI
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content */}

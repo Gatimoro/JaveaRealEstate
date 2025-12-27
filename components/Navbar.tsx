@@ -53,6 +53,7 @@ export default function Navbar() {
       signIn: 'Iniciar sesión',
       signOut: 'Cerrar sesión',
       myAccount: 'Mi cuenta',
+      myProfile: 'Mi Perfil',
       searchPlaceholder: 'Buscar propiedades...',
     },
     en: {
@@ -62,6 +63,7 @@ export default function Navbar() {
       signIn: 'Sign in',
       signOut: 'Sign out',
       myAccount: 'My account',
+      myProfile: 'My Profile',
       searchPlaceholder: 'Search properties...',
     },
     ru: {
@@ -71,6 +73,7 @@ export default function Navbar() {
       signIn: 'Войти',
       signOut: 'Выйти',
       myAccount: 'Мой аккаунт',
+      myProfile: 'Мой профиль',
       searchPlaceholder: 'Поиск недвижимости...',
     },
   };
@@ -124,9 +127,9 @@ export default function Navbar() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t.searchPlaceholder}
-                  className="w-full px-4 py-2 pl-10 bg-background/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className="w-full px-4 py-2 pl-10 bg-card/80 backdrop-blur-sm text-foreground placeholder:text-muted-foreground/60 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
               </div>
             </form>
           </div>
@@ -167,6 +170,16 @@ export default function Navbar() {
                       <p className="text-sm font-medium">{session.user.name}</p>
                       <p className="text-xs text-muted truncate">{session.user.email}</p>
                     </div>
+                    <button
+                      onClick={() => {
+                        router.push('/profile');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/10 transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>{t.myProfile}</span>
+                    </button>
                     <button
                       onClick={() => {
                         signOut();
