@@ -132,9 +132,9 @@ export default function Navbar() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t.searchPlaceholder}
-                    className="w-full px-4 py-2 pl-10 bg-background/95 backdrop-blur-sm text-foreground placeholder:text-muted-foreground border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    className="w-full px-4 py-2 pl-10 bg-white/90 text-gray-900 placeholder:text-gray-500 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
                   />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 </div>
               </form>
             )}
