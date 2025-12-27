@@ -5,6 +5,8 @@ import HeroSection from '@/components/HeroSection';
 import CategoryCards from '@/components/CategoryCards';
 import PropertyCarousel from '@/components/PropertyCarousel';
 import AnalyticsSection from '@/components/AnalyticsSection';
+import AboutSection from '@/components/AboutSection';
+import ContactSection from '@/components/ContactSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
 import { houses, investments, plots } from '@/data/properties';
@@ -50,6 +52,8 @@ export default function Home() {
       />
       <PropertyCarousel title={t.plots} properties={plots} id="parcelas" />
       <AnalyticsSection />
+      <AboutSection />
+      <ContactSection />
       <CTASection />
       <Footer />
     </main>
