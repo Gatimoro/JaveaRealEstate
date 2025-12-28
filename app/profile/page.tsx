@@ -1,9 +1,10 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { User } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PropertyCard from '@/components/PropertyCard';
@@ -15,10 +16,28 @@ import type { Property } from '@/data/properties';
 import { useLanguage } from '@/lib/i18n';
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { savedProperties } = useSavedProperties();
   const { locale } = useLanguage();
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const translations = {
     es: {
@@ -59,12 +78,12 @@ export default function ProfilePage() {
   const t = translations[locale];
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (!loading && !user) {
       router.push('/');
     }
-  }, [status, router]);
+  }, [loading, user, router]);
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-xl text-muted">{t.loading}</p>
@@ -72,7 +91,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-xl text-muted">{t.signInRequired}</p>
@@ -101,21 +120,21 @@ export default function ProfilePage() {
         {/* Profile Header */}
         <div className="mb-12">
           <div className="flex items-center gap-6">
-            {session.user.image ? (
+            {user.user_metadata?.avatar_url ? (
               <img
-                src={session.user.image}
-                alt={session.user.name || 'User'}
+                src={user.user_metadata.avatar_url}
+                alt={user.user_metadata?.full_name || 'User'}
                 className="w-24 h-24 rounded-full border-4 border-primary"
               />
             ) : (
               <div className="w-24 h-24 rounded-full bg-primary/10 border-4 border-primary flex items-center justify-center">
-                <User className="w-12 h-12 text-primary" />
+                <UserIcon className="w-12 h-12 text-primary" />
               </div>
             )}
             <div>
               <h1 className="text-4xl font-bold mb-2">{t.myProfile}</h1>
-              <p className="text-xl text-muted">{session.user.name}</p>
-              <p className="text-muted">{session.user.email}</p>
+              <p className="text-xl text-muted">{user.user_metadata?.full_name || user.email?.split('@')[0]}</p>
+              <p className="text-muted">{user.email}</p>
             </div>
           </div>
         </div>

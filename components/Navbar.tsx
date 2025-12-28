@@ -4,28 +4,65 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Globe, ChevronDown, User, LogOut, Search } from 'lucide-react';
-import { useSession, signIn, signOut } from 'next-auth/react';
 import { useLanguage, locales, languageNames, languageFlags, type Locale } from '@/lib/i18n';
 import MiralunaLogo from './MiralunaLogo';
+import { createClient } from '@/lib/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const { locale, setLocale } = useLanguage();
-  const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const supabase = createClient();
 
   // Check if we're on the homepage
   const isHomepage = pathname === '/';
+
+  // Check auth status
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const handleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) console.error('Error signing in:', error);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setShowUserMenu(false);
+    router.refresh();
   };
 
   useEffect(() => {
@@ -143,9 +180,9 @@ export default function Navbar() {
           {/* Right side: Auth + Language */}
           <div className="flex items-center gap-3">
             {/* User Auth */}
-            {status === 'loading' ? (
+            {loading ? (
               <div className="w-10 h-10 rounded-full bg-card animate-pulse" />
-            ) : session?.user ? (
+            ) : user ? (
               <div className="relative">
                 <button
                   onClick={(e) => {
@@ -154,17 +191,17 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary transition-colors"
                 >
-                  {session.user.image ? (
+                  {user.user_metadata?.avatar_url ? (
                     <img
-                      src={session.user.image}
-                      alt={session.user.name || 'User'}
+                      src={user.user_metadata.avatar_url}
+                      alt={user.user_metadata?.full_name || 'User'}
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
                     <User className="w-5 h-5" />
                   )}
                   <span className="hidden md:inline text-sm font-medium">
-                    {session.user.name?.split(' ')[0]}
+                    {user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                 </button>
@@ -173,8 +210,8 @@ export default function Navbar() {
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
                     <div className="px-4 py-3 border-b border-border">
-                      <p className="text-sm font-medium">{session.user.name}</p>
-                      <p className="text-xs text-muted truncate">{session.user.email}</p>
+                      <p className="text-sm font-medium">{user.user_metadata?.full_name || user.email}</p>
+                      <p className="text-xs text-muted truncate">{user.email}</p>
                     </div>
                     <button
                       onClick={() => {
@@ -187,10 +224,7 @@ export default function Navbar() {
                       <span>{t.myProfile}</span>
                     </button>
                     <button
-                      onClick={() => {
-                        signOut();
-                        setShowUserMenu(false);
-                      }}
+                      onClick={handleSignOut}
                       className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/10 transition-colors text-red-600"
                     >
                       <LogOut className="w-4 h-4" />
@@ -201,7 +235,7 @@ export default function Navbar() {
               </div>
             ) : (
               <button
-                onClick={() => signIn('google')}
+                onClick={handleSignIn}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-500 transition-colors font-semibold text-sm"
               >
                 {t.signIn}

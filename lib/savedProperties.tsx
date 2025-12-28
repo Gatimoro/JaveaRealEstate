@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useSession } from 'next-auth/react';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface SavedPropertiesContextType {
   savedProperties: string[];
@@ -12,13 +13,30 @@ interface SavedPropertiesContextType {
 const SavedPropertiesContext = createContext<SavedPropertiesContextType | undefined>(undefined);
 
 export function SavedPropertiesProvider({ children }: { children: ReactNode }) {
-  const { data: session } = useSession();
+  const [user, setUser] = useState<User | null>(null);
   const [savedProperties, setSavedProperties] = useState<string[]>([]);
+  const supabase = createClient();
+
+  // Get user and subscribe to auth changes
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Load saved properties from localStorage when user logs in
   useEffect(() => {
-    if (session?.user?.email) {
-      const key = `saved_properties_${session.user.email}`;
+    if (user?.email) {
+      const key = `saved_properties_${user.email}`;
       const saved = localStorage.getItem(key);
       if (saved) {
         setSavedProperties(JSON.parse(saved));
@@ -26,12 +44,12 @@ export function SavedPropertiesProvider({ children }: { children: ReactNode }) {
     } else {
       setSavedProperties([]);
     }
-  }, [session]);
+  }, [user]);
 
   const toggleSaved = (propertyId: string) => {
-    if (!session?.user?.email) return;
+    if (!user?.email) return;
 
-    const key = `saved_properties_${session.user.email}`;
+    const key = `saved_properties_${user.email}`;
     const newSaved = savedProperties.includes(propertyId)
       ? savedProperties.filter(id => id !== propertyId)
       : [...savedProperties, propertyId];

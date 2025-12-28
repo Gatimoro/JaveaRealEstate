@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
-import { useSession, signIn } from 'next-auth/react';
+import { createClient } from '@/lib/supabase/client';
 import { useSavedProperties } from '@/lib/savedProperties';
 import { useLanguage } from '@/lib/i18n';
+import type { User } from '@supabase/supabase-js';
 
 interface SavePropertyButtonProps {
   propertyId: string;
@@ -11,10 +13,26 @@ interface SavePropertyButtonProps {
 }
 
 export default function SavePropertyButton({ propertyId, className = '' }: SavePropertyButtonProps) {
-  const { data: session } = useSession();
+  const [user, setUser] = useState<User | null>(null);
   const { toggleSaved, isSaved } = useSavedProperties();
   const { locale } = useLanguage();
   const saved = isSaved(propertyId);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const translations = {
     es: {
@@ -36,12 +54,18 @@ export default function SavePropertyButton({ propertyId, className = '' }: SaveP
 
   const t = translations[locale];
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!session) {
-      signIn('google');
+    if (!user) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) console.error('Error signing in:', error);
       return;
     }
 
@@ -51,7 +75,7 @@ export default function SavePropertyButton({ propertyId, className = '' }: SaveP
   return (
     <button
       onClick={handleClick}
-      title={!session ? t.signInToSave : saved ? t.saved : t.save}
+      title={!user ? t.signInToSave : saved ? t.saved : t.save}
       className={`p-2 rounded-full transition-all hover:scale-110 ${
         saved
           ? 'bg-red-50 text-red-500 hover:bg-red-100'
