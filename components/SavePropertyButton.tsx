@@ -17,9 +17,10 @@ export default function SavePropertyButton({ propertyId, className = '' }: SaveP
   const { toggleSaved, isSaved } = useSavedProperties();
   const { locale } = useLanguage();
   const saved = isSaved(propertyId);
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -59,6 +60,7 @@ export default function SavePropertyButton({ propertyId, className = '' }: SaveP
     e.stopPropagation();
 
     if (!user) {
+      const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

@@ -15,10 +15,11 @@ const SavedPropertiesContext = createContext<SavedPropertiesContextType | undefi
 export function SavedPropertiesProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [savedProperties, setSavedProperties] = useState<string[]>([]);
-  const supabase = createClient();
 
   // Get user and subscribe to auth changes
   useEffect(() => {
+    const supabase = createClient();
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);

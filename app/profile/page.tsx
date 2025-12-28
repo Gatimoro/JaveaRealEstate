@@ -21,9 +21,10 @@ export default function ProfilePage() {
   const router = useRouter();
   const { savedProperties } = useSavedProperties();
   const { locale } = useLanguage();
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);

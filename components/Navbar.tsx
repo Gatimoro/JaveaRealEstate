@@ -19,13 +19,14 @@ export default function Navbar() {
   const { locale, setLocale } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
 
   // Check if we're on the homepage
   const isHomepage = pathname === '/';
 
   // Check auth status
   useEffect(() => {
+    const supabase = createClient();
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -50,6 +51,7 @@ export default function Navbar() {
   };
 
   const handleSignIn = async () => {
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -60,6 +62,7 @@ export default function Navbar() {
   };
 
   const handleSignOut = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     setShowUserMenu(false);
     router.refresh();
