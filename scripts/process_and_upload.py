@@ -9,7 +9,7 @@ Processes scraped properties by:
 4. Uploading to Supabase
 
 Requirements:
-    pip install requests python-dotenv supabase geopy googletrans==4.0.0rc1
+    pip install requests python-dotenv supabase geopy deep-translator
 
 Usage:
     python scripts/process_and_upload.py scraped-properties.json
@@ -21,13 +21,14 @@ import sys
 import hashlib
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
+import time
 
 import requests
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 # Load environment variables
 load_dotenv()
@@ -36,7 +37,6 @@ SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 # Initialize services
-translator = Translator()
 geolocator = Nominatim(user_agent="javea-real-estate-scraper")
 
 # Cache for geocoding results
@@ -71,6 +71,9 @@ def get_coordinates(address: str, location: str) -> Optional[Tuple[float, float]
                 geocode_cache[cache_key] = coords
                 print(f"  ✅ Found: {coords}")
                 return coords
+            
+            # Add small delay to respect rate limits
+            time.sleep(0.5)
         except Exception as e:
             print(f"  ⚠️  Geocoding error: {e}")
             continue
@@ -117,8 +120,39 @@ def translate_text(text: str, target_lang: str) -> str:
         return text
 
     try:
-        result = translator.translate(text, dest=target_lang, src='auto')
-        return result.text
+        # deep-translator uses 2-letter language codes
+        translator = GoogleTranslator(source='auto', target=target_lang)
+        
+        # Handle long text by chunking (Google Translate limit is ~5000 chars)
+        if len(text) > 4500:
+            # Split by sentences and translate in chunks
+            chunks = []
+            current_chunk = ""
+            
+            for sentence in text.split('. '):
+                if len(current_chunk) + len(sentence) < 4500:
+                    current_chunk += sentence + '. '
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk)
+                    current_chunk = sentence + '. '
+            
+            if current_chunk:
+                chunks.append(current_chunk)
+            
+            # Translate each chunk
+            translated_chunks = []
+            for chunk in chunks:
+                translated = translator.translate(chunk)
+                translated_chunks.append(translated)
+                time.sleep(0.3)  # Small delay between requests
+            
+            return ' '.join(translated_chunks)
+        else:
+            result = translator.translate(text)
+            time.sleep(0.3)  # Small delay to respect rate limits
+            return result
+            
     except Exception as e:
         print(f"  ⚠️  Translation error ({target_lang}): {e}")
         return text  # Return original if translation fails
@@ -139,12 +173,11 @@ def translate_property(prop: Dict) -> Dict:
     # Translate description
     if prop.get('description'):
         try:
-            # Split long descriptions into chunks (Google Translate has limits)
             desc = prop['description']
 
-            if len(desc) > 5000:
-                # Truncate very long descriptions
-                desc = desc[:5000] + '...'
+            # Truncate very long descriptions
+            if len(desc) > 4500:
+                desc = desc[:4500] + '...'
 
             prop['description_en'] = translate_text(desc, 'en')
             prop['description_ru'] = translate_text(desc, 'ru')
