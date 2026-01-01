@@ -9,7 +9,7 @@ Processes scraped properties by:
 4. Uploading to Supabase
 
 Requirements:
-    pip install requests python-dotenv supabase geopy deep-translator
+    pip install requests python-dotenv supabase geopy translatepy
 
 Usage:
     python scripts/process_and_upload.py scraped-properties.json
@@ -18,7 +18,6 @@ Usage:
 import os
 import json
 import sys
-import hashlib
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 import time
@@ -28,7 +27,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from deep_translator import GoogleTranslator
+from translatepy import Translator
 
 # Load environment variables
 load_dotenv()
@@ -38,6 +37,7 @@ SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 # Initialize services
 geolocator = Nominatim(user_agent="javea-real-estate-scraper")
+translator = Translator()
 
 # Cache for geocoding results
 geocode_cache = {}
@@ -115,43 +115,22 @@ def are_properties_duplicate(prop1: Dict, prop2: Dict, max_distance_m: float = 5
 # ============================================================================
 
 def translate_text(text: str, target_lang: str) -> str:
-    """Translate text to target language using Google Translate."""
+    """Translate text to target language using translatepy."""
     if not text or len(text.strip()) == 0:
         return text
 
     try:
-        # deep-translator uses 2-letter language codes
-        translator = GoogleTranslator(source='auto', target=target_lang)
-        
-        # Handle long text by chunking (Google Translate limit is ~5000 chars)
+        # Truncate if too long (API limits)
         if len(text) > 4500:
-            # Split by sentences and translate in chunks
-            chunks = []
-            current_chunk = ""
-            
-            for sentence in text.split('. '):
-                if len(current_chunk) + len(sentence) < 4500:
-                    current_chunk += sentence + '. '
-                else:
-                    if current_chunk:
-                        chunks.append(current_chunk)
-                    current_chunk = sentence + '. '
-            
-            if current_chunk:
-                chunks.append(current_chunk)
-            
-            # Translate each chunk
-            translated_chunks = []
-            for chunk in chunks:
-                translated = translator.translate(chunk)
-                translated_chunks.append(translated)
-                time.sleep(0.3)  # Small delay between requests
-            
-            return ' '.join(translated_chunks)
-        else:
-            result = translator.translate(text)
-            time.sleep(0.3)  # Small delay to respect rate limits
-            return result
+            text = text[:4500] + '...'
+        
+        # Translate using translatepy (supports multiple services)
+        result = translator.translate(text, target_lang)
+        
+        # Small delay to respect rate limits
+        time.sleep(0.3)
+        
+        return result.result
             
     except Exception as e:
         print(f"  ⚠️  Translation error ({target_lang}): {e}")
