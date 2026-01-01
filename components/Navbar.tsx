@@ -192,18 +192,10 @@ export default function Navbar() {
                     e.stopPropagation();
                     setShowUserMenu(!showUserMenu);
                   }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 h-10 rounded-lg border border-border hover:border-primary transition-colors"
                 >
-                  {user.user_metadata?.avatar_url ? (
-                    <img
-                      src={user.user_metadata.avatar_url}
-                      alt={user.user_metadata?.full_name || 'User'}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <User className="w-5 h-5" />
-                  )}
-                  <span className="hidden md:inline text-sm font-medium">
+                  <User className="w-5 h-5" />
+                  <span className="text-sm font-medium">
                     {user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
