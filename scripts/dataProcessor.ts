@@ -191,24 +191,24 @@ export async function processProperty(
   // Convert to Miraluna property format
   const property: Partial<Property> = {
     id,
-    title: {
-      en: scraped.title,
-      es: scraped.title, // TODO: Translate
-      ru: scraped.title, // TODO: Translate
-    },
-    type: scraped.type,
+    title: scraped.title, // Spanish by default
+    titleEn: scraped.title, // TODO: Translate to English
+    titleRu: scraped.title, // TODO: Translate to Russian
+    type: scraped.type as 'house' | 'investment' | 'plot',
     price: scraped.price,
     location: scraped.location,
-    area,
-    bedrooms: scraped.bedrooms,
-    bathrooms: scraped.bathrooms,
-    size: scraped.buildSize,
-    plotSize: scraped.plotSize,
-    description: descriptions,
+    description: descriptions.es, // Spanish by default
+    descriptionEn: descriptions.en,
+    descriptionRu: descriptions.ru,
     features: generateFeatures(scraped),
     images: scraped.images,
-    mainImage: scraped.mainImage,
-    available: scraped.status === 'available',
+    sourceUrl: scraped.sourceUrl,
+    specs: {
+      bedrooms: scraped.bedrooms,
+      bathrooms: scraped.bathrooms,
+      size: scraped.buildSize,
+      plotSize: scraped.plotSize,
+    },
   };
 
   return property;
