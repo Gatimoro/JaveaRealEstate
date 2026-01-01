@@ -114,12 +114,34 @@ def are_properties_duplicate(prop1: Dict, prop2: Dict, max_distance_m: float = 5
 # TRANSLATION FUNCTIONS
 # ============================================================================
 
-def translate_text(text: str, target_lang: str) -> str:
+def detect_language(text: str) -> str:
+    """Detect the language of the text."""
+    try:
+        result = translator.language(text)
+        # Get the language code (e.g., 'en', 'es', 'ru')
+        lang_code = result.alpha2
+        return lang_code.lower()
+    except Exception as e:
+        print(f"  ⚠️  Language detection error: {e}")
+        return 'unknown'
+
+
+def translate_text(text: str, target_lang: str, source_lang: Optional[str] = None) -> str:
     """Translate text to target language using translatepy."""
     if not text or len(text.strip()) == 0:
         return text
 
     try:
+        # Detect source language if not provided
+        if not source_lang:
+            source_lang = detect_language(text)
+            print(f"    📝 Detected language: {source_lang}")
+        
+        # Skip translation if source and target are the same
+        if source_lang == target_lang:
+            print(f"    ⏭️  Skipped {target_lang} (already in {source_lang})")
+            return text
+        
         # Truncate if too long (API limits)
         if len(text) > 4500:
             text = text[:4500] + '...'
@@ -130,6 +152,7 @@ def translate_text(text: str, target_lang: str) -> str:
         # Small delay to respect rate limits
         time.sleep(0.3)
         
+        print(f"    ✅ Translated {source_lang}→{target_lang}")
         return result.result
             
     except Exception as e:
@@ -144,8 +167,24 @@ def translate_property(prop: Dict) -> Dict:
     # Translate title
     if prop.get('title'):
         try:
-            prop['title_en'] = translate_text(prop['title'], 'en')
-            prop['title_ru'] = translate_text(prop['title'], 'ru')
+            # Detect source language once
+            title_lang = detect_language(prop['title'])
+            
+            # Translate to EN and RU
+            prop['title_en'] = translate_text(prop['title'], 'en', title_lang)
+            prop['title_ru'] = translate_text(prop['title'], 'ru', title_lang)
+            
+            # Set Spanish as default if source is Spanish, otherwise use EN
+            if title_lang == 'es':
+                # Spanish is already the original
+                pass
+            elif title_lang == 'en':
+                # English is original, set ES as translation
+                prop['title'] = translate_text(prop['title'], 'es', title_lang)
+            else:
+                # Unknown language, translate to all three
+                prop['title'] = translate_text(prop['title'], 'es', title_lang)
+                
         except Exception as e:
             print(f"    ⚠️  Title translation failed: {e}")
 
@@ -158,10 +197,24 @@ def translate_property(prop: Dict) -> Dict:
             if len(desc) > 4500:
                 desc = desc[:4500] + '...'
 
-            prop['description_en'] = translate_text(desc, 'en')
-            prop['description_ru'] = translate_text(desc, 'ru')
+            # Detect source language
+            desc_lang = detect_language(desc[:200])  # Use first 200 chars for detection
+            
+            # Translate to EN and RU
+            prop['description_en'] = translate_text(desc, 'en', desc_lang)
+            prop['description_ru'] = translate_text(desc, 'ru', desc_lang)
+            
+            # Set Spanish description
+            if desc_lang == 'es':
+                # Spanish is already the original
+                pass
+            elif desc_lang == 'en':
+                # English is original, translate to Spanish
+                prop['description'] = translate_text(desc, 'es', desc_lang)
+            else:
+                # Unknown language, translate to Spanish
+                prop['description'] = translate_text(desc, 'es', desc_lang)
 
-            print(f"    ✅ Translated to EN and RU")
         except Exception as e:
             print(f"    ⚠️  Description translation failed: {e}")
 
