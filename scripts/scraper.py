@@ -24,11 +24,18 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from .env, .env.local, or local.env
+load_dotenv()  # Default .env
+load_dotenv('.env.local', override=True)  # Override with .env.local if exists
+load_dotenv('local.env', override=True)  # Override with local.env if exists
 
+# Hardcoded keys (ONLY for local development - comment out if using .env files)
+# SUPABASE_URL = "https://xxxxx.supabase.co"
+# SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxx"
+
+# Get from environment (will use hardcoded values if not found in env)
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')  # You'll need to add this
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 # ============================================================================
 # SCRAPER FUNCTIONS
