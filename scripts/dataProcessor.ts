@@ -252,13 +252,14 @@ export function cleanProperty(property: Partial<Property>): Partial<Property> {
     // Ensure price is a valid number
     price: Math.max(0, property.price || 0),
 
-    // Ensure sizes are valid
-    size: Math.max(0, property.size || 0),
-    plotSize: property.plotSize ? Math.max(0, property.plotSize) : undefined,
-
-    // Ensure counts are valid
-    bedrooms: Math.max(0, property.bedrooms || 0),
-    bathrooms: Math.max(0, property.bathrooms || 0),
+    // Ensure specs are valid
+    specs: {
+      ...property.specs,
+      size: Math.max(0, property.specs?.size || 0),
+      plotSize: property.specs?.plotSize ? Math.max(0, property.specs.plotSize) : undefined,
+      bedrooms: property.specs?.bedrooms ? Math.max(0, property.specs.bedrooms) : undefined,
+      bathrooms: property.specs?.bathrooms ? Math.max(0, property.specs.bathrooms) : undefined,
+    },
 
     // Remove duplicate features
     features: property.features ? [...new Set(property.features)] : [],
@@ -278,12 +279,12 @@ export function validateProperty(property: Partial<Property>): {
   const errors: string[] = [];
 
   if (!property.id) errors.push('Missing property ID');
-  if (!property.title || !property.title.en) errors.push('Missing property title');
+  if (!property.title) errors.push('Missing property title');
   if (!property.type) errors.push('Missing property type');
   if (!property.price || property.price <= 0) errors.push('Invalid price');
   if (!property.location) errors.push('Missing location');
-  if (!property.mainImage) errors.push('Missing main image');
-  if (!property.description || !property.description.en) errors.push('Missing description');
+  if (!property.images || property.images.length === 0) errors.push('Missing images');
+  if (!property.description) errors.push('Missing description');
 
   return {
     valid: errors.length === 0,
