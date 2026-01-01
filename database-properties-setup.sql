@@ -39,6 +39,11 @@ CREATE TABLE IF NOT EXISTS properties (
   source_url TEXT,
   source_reference TEXT,
 
+  -- Analytics (added by database-analytics-setup.sql)
+  views_count INTEGER DEFAULT 0,
+  clicks_count INTEGER DEFAULT 0,
+  saves_count INTEGER DEFAULT 0,
+
   -- Metadata
   status TEXT DEFAULT 'available' CHECK (status IN ('available', 'reserved', 'sold')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
