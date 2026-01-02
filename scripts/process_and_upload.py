@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Property Data Processor - Deduplication & Translation
 
@@ -46,53 +46,136 @@ geocode_cache = {}
 # GEOLOCATION FUNCTIONS
 # ============================================================================
 
-def get_coordinates(address: str, location: str) -> Optional[Tuple[float, float]]:
+def extract_location_from_title(title: str) -> List[str]:
+    """Extract location keywords from property title.
+
+    Titles often contain neighborhood/area names like:
+    - "Villa in Costa Nova"
+    - "Apartment Cala Blanca"
+    - "New Development - Cumbres Del Tosalet"
+    - "Penthouse Arenal Beach"
+
+    Returns list of location keywords found in title.
+    """
+    if not title:
+        return []
+
+    # Common Javea neighborhoods and areas
+    known_locations = [
+        'Costa Nova', 'Cala Blanca', 'Cala Granadella', 'Granadella',
+        'Cumbres Del Tosalet', 'Tosalet', 'Balcon al Mar', 'Balcón al Mar',
+        'Cap Marti', 'Cap Martí', 'Portichol', 'Portitxol',
+        'Arenal', 'Arenal Beach', 'Playa Arenal',
+        'Pinosol', 'Adsubia', 'La Lluca',
+        'Montgo', 'Montgó', 'Monte Pego',
+        'Pueblo', 'Old Town', 'Casco Antiguo',
+        'Puerto', 'Port', 'Marina',
+        'Gracia', 'Gràcia',
+        'Toscamar', 'El Tosalet', 'Piver',
+        'La Corona', 'Rafalet', 'Capsades'
+    ]
+
+    locations_found = []
+    title_upper = title.upper()
+
+    for location in known_locations:
+        location_upper = location.upper()
+        if location_upper in title_upper:
+            locations_found.append(location)
+
+    return locations_found
+
+
+def get_coordinates(title: str, location: str) -> Optional[Tuple[float, float]]:
     """Get latitude and longitude for an address.
 
     Uses hierarchical search: Javea → Alicante → Valencia → Spain
     Handles both Javea (Spanish) and Xàbia (Valencian) spellings
+    Extracts location keywords from title for better accuracy
     """
     # Create a cache key
-    cache_key = f"{address}_{location}"
+    cache_key = f"{title}_{location}"
 
     if cache_key in geocode_cache:
         return geocode_cache[cache_key]
 
-    # Normalize location to remove Xàbia variations for consistent geocoding
-    # Geocoding works better with "Javea" than "Xàbia"
+    # Extract location from title (e.g., "Costa Nova", "Cumbres Del Tosalet")
+    title_locations = extract_location_from_title(title)
+
+    # Normalize location field to remove Xàbia variations
     location_clean = normalize_location(location)
 
-    # Hierarchical search queries with proper location structure
-    # Javea is in Alicante province, which is in Valencia autonomous community, which is in Spain
-    search_queries = [
-        f"{address}, {location_clean}, Javea, Alicante, Spain",
-        f"{location_clean}, Javea, Alicante, Valencia, Spain",
-        f"{location_clean}, Javea, Alicante, Spain",
-        f"{location_clean}, Javea, Spain",
-        f"Javea, Alicante, Valencia, Spain",
-        f"{location_clean}, Alicante, Valencia, Spain",
-        f"{location_clean}, Valencia, Spain",
-    ]
+    # Build search queries - prioritize title locations over generic location field
+    search_queries = []
 
+    # Priority 1: Title locations are most specific
+    for title_loc in title_locations:
+        title_loc_clean = normalize_location(title_loc)
+        search_queries.extend([
+            f"{title_loc_clean}, Javea, Alicante, Spain",
+            f"{title_loc_clean}, Javea, Spain",
+        ])
+
+    # Priority 2: Location field from property listing
+    if location_clean and location_clean != 'javea':
+        search_queries.extend([
+            f"{location_clean}, Javea, Alicante, Spain",
+            f"{location_clean}, Javea, Spain",
+        ])
+
+    # Priority 3: Broader queries (but NOT generic "Javea, Alicante, Spain" - too generic)
+    if location_clean and location_clean != 'javea':
+        search_queries.extend([
+            f"{location_clean}, Alicante, Valencia, Spain",
+            f"{location_clean}, Valencia, Spain",
+        ])
+
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_queries = []
     for query in search_queries:
-        try:
-            print(f"  🌍 Geocoding: {query}")
-            location_data = geolocator.geocode(query)
+        if query not in seen:
+            seen.add(query)
+            unique_queries.append(query)
 
-            if location_data:
-                coords = (location_data.latitude, location_data.longitude)
-                geocode_cache[cache_key] = coords
-                print(f"  ✅ Found: {coords}")
-                return coords
+    # Try each query with retry logic and exponential backoff
+    for query in unique_queries:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                print(f"  🌍 Geocoding: {query}")
+                location_data = geolocator.geocode(query, timeout=10)
 
-            # Add small delay to respect rate limits (Nominatim requires 1 req/sec)
-            time.sleep(1.0)
-        except Exception as e:
-            print(f"  ⚠️  Geocoding error: {e}")
-            time.sleep(1.0)  # Wait even on error
-            continue
+                if location_data:
+                    coords = (location_data.latitude, location_data.longitude)
+                    geocode_cache[cache_key] = coords
+                    print(f"  ✅ Found: {coords}")
+                    return coords
 
-    print(f"  ❌ Could not geocode: {cache_key}")
+                # No result found for this query, try next one
+                break
+
+            except Exception as e:
+                error_str = str(e).lower()
+
+                # Check if it's a rate limit error (403, 503, or "too many requests")
+                if '403' in error_str or '503' in error_str or 'too many' in error_str:
+                    wait_time = (2 ** attempt) * 2  # Exponential backoff: 2s, 4s, 8s
+                    print(f"  ⚠️  Rate limit hit, waiting {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(wait_time)
+
+                    if attempt == max_retries - 1:
+                        print(f"  ❌ Max retries reached, skipping this query")
+                        break
+                else:
+                    # Other error, log and move to next query
+                    print(f"  ⚠️  Geocoding error: {e}")
+                    break
+
+        # Add delay between queries to respect rate limits (Nominatim requires 1 req/sec)
+        time.sleep(1.2)
+
+    print(f"  ❌ Could not geocode: {cache_key[:100]}...")
     return None
 
 
@@ -174,22 +257,58 @@ def detect_language(text: str) -> str:
     """Detect the language of the text."""
     try:
         result = translator.language(text)
-        # Get the language code (e.g., 'en', 'es', 'ru')
-        # Try different ways to access the language code
-        if hasattr(result, 'alpha2'):
-            lang_code = result.alpha2
-        elif hasattr(result, 'code'):
-            lang_code = result.code
-        elif hasattr(result, 'id'):
-            lang_code = result.id
-        else:
-            # Fallback: try to convert result to string
-            lang_code = str(result).lower()[:2]
 
-        return lang_code.lower() if lang_code else 'en'
+        # Try to extract language code from the result object
+        # Different versions of translatepy use different attributes
+        lang_code = None
+
+        # Try various attributes
+        for attr in ['alpha2', 'code', 'id', 'language']:
+            if hasattr(result, attr):
+                val = getattr(result, attr)
+                # Make sure we get a string
+                if isinstance(val, str):
+                    lang_code = val
+                    break
+                # If it's another object with these attributes, try to get from it
+                elif hasattr(val, 'alpha2'):
+                    lang_code = getattr(val, 'alpha2', None)
+                    break
+                elif hasattr(val, 'code'):
+                    lang_code = getattr(val, 'code', None)
+                    break
+
+        # If we still don't have a code, try the result's __dict__
+        if not lang_code and hasattr(result, '__dict__'):
+            result_dict = result.__dict__
+            for key in ['alpha2', 'code', 'id', 'language']:
+                if key in result_dict and isinstance(result_dict[key], str):
+                    lang_code = result_dict[key]
+                    break
+
+        # Last resort: check if result has a name attribute
+        if not lang_code and hasattr(result, 'name'):
+            name = getattr(result, 'name', '')
+            if isinstance(name, str):
+                # Common language names to codes
+                name_lower = name.lower()
+                if 'spanish' in name_lower or 'español' in name_lower:
+                    lang_code = 'es'
+                elif 'english' in name_lower:
+                    lang_code = 'en'
+                elif 'russian' in name_lower:
+                    lang_code = 'ru'
+
+        # Ensure we have a valid 2-letter code
+        if lang_code and isinstance(lang_code, str):
+            lang_code = lang_code.lower()[:2]
+            return lang_code if len(lang_code) == 2 else 'en'
+
+        return 'en'  # Default fallback
+
     except Exception as e:
         print(f"  ⚠️  Language detection error: {e}")
-        return 'en'  # Default to English instead of 'unknown'
+        return 'en'  # Default to English
 
 
 def translate_text(text: str, target_lang: str, source_lang: Optional[str] = None) -> str:
