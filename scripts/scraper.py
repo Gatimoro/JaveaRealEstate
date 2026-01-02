@@ -353,7 +353,18 @@ def save_to_json(properties: List[Dict], filename: str = 'scraped-properties.jso
 
 def main():
     """Main execution function."""
+    import sys
+
     print('🕷️  JaveaHomeFinders Property Scraper\n')
+
+    # Check for --upload flag (default is NO upload)
+    should_upload = '--upload' in sys.argv
+
+    if should_upload:
+        print('📤 Upload to Supabase: ENABLED')
+    else:
+        print('📤 Upload to Supabase: DISABLED (use --upload to enable)')
+    print()
 
     # Scrape properties
     properties = scrape_all_properties()
@@ -361,12 +372,15 @@ def main():
     # Save to JSON file (backup)
     save_to_json(properties)
 
-    # Upload to Supabase
-    try:
-        upload_properties_to_supabase(properties)
-    except ValueError as e:
-        print(f'\n⚠️  {e}')
-        print('Properties saved to JSON file only.')
+    # Upload to Supabase (only if --upload flag is set)
+    if should_upload:
+        try:
+            upload_properties_to_supabase(properties)
+        except ValueError as e:
+            print(f'\n⚠️  {e}')
+            print('Properties saved to JSON file only.')
+    else:
+        print('\n✨ Scraping complete! (Skipped upload - use --upload to enable)')
 
 
 if __name__ == '__main__':
