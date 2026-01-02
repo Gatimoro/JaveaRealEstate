@@ -175,11 +175,21 @@ def detect_language(text: str) -> str:
     try:
         result = translator.language(text)
         # Get the language code (e.g., 'en', 'es', 'ru')
-        lang_code = result.alpha2
-        return lang_code.lower()
+        # Try different ways to access the language code
+        if hasattr(result, 'alpha2'):
+            lang_code = result.alpha2
+        elif hasattr(result, 'code'):
+            lang_code = result.code
+        elif hasattr(result, 'id'):
+            lang_code = result.id
+        else:
+            # Fallback: try to convert result to string
+            lang_code = str(result).lower()[:2]
+
+        return lang_code.lower() if lang_code else 'en'
     except Exception as e:
         print(f"  ⚠️  Language detection error: {e}")
-        return 'unknown'
+        return 'en'  # Default to English instead of 'unknown'
 
 
 def translate_text(text: str, target_lang: str, source_lang: Optional[str] = None) -> str:
@@ -500,20 +510,30 @@ def main():
     # Normal processing mode
     if len(sys.argv) < 2:
         print("Usage:")
-        print("  python process_and_upload.py <json-file>           # Process and upload scraped properties")
-        print("  python process_and_upload.py --sync [output-file]  # Sync FROM Supabase TO local JSON")
+        print("  python process_and_upload.py <json-file>                    # Process only (NO upload)")
+        print("  python process_and_upload.py <json-file> --upload           # Process AND upload to Supabase")
+        print("  python process_and_upload.py --sync [output-file]           # Sync FROM Supabase TO local JSON")
         print("\nExamples:")
         print("  python process_and_upload.py scraped-properties.json")
+        print("  python process_and_upload.py scraped-properties.json --upload")
         print("  python process_and_upload.py --sync synced-properties.json")
         sys.exit(1)
 
     input_file = sys.argv[1]
 
+    # Check for --upload flag (default is NO upload)
+    should_upload = '--upload' in sys.argv
+
     if not os.path.exists(input_file):
         print(f"❌ File not found: {input_file}")
         sys.exit(1)
 
-    print(f"🚀 Processing properties from: {input_file}\n")
+    print(f"🚀 Processing properties from: {input_file}")
+    if should_upload:
+        print(f"📤 Upload to Supabase: ENABLED")
+    else:
+        print(f"📤 Upload to Supabase: DISABLED (use --upload to enable)")
+    print()
 
     # Load properties
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -549,13 +569,16 @@ def main():
         json.dump(unique_properties, f, indent=2, ensure_ascii=False)
     print(f"💾 Saved unique properties to: {deduped_file}")
 
-    # Upload to Supabase
-    try:
-        upload_to_supabase(unique_properties)
-        print("\n✨ Processing complete!")
-    except ValueError as e:
-        print(f"\n⚠️  {e}")
-        print("Properties saved to JSON files only.")
+    # Upload to Supabase (only if --upload flag is set)
+    if should_upload:
+        try:
+            upload_to_supabase(unique_properties)
+            print("\n✨ Processing and upload complete!")
+        except ValueError as e:
+            print(f"\n⚠️  {e}")
+            print("Properties saved to JSON files only.")
+    else:
+        print("\n✨ Processing complete! (Skipped upload - use --upload to enable)")
 
 
 if __name__ == '__main__':
