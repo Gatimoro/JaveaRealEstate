@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Bed, Bath, Maximize, MapPin, ExternalLink, Crop, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getPropertyById } from '@/lib/supabase/queries';
+import { getPropertyById, getProperties } from '@/lib/supabase/queries';
 import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
@@ -18,6 +18,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
 
   // Fetch property from Supabase
   useEffect(() => {
@@ -44,6 +45,22 @@ export default function PropertyDetailPage() {
 
     loadProperty();
   }, [id]);
+
+  // Fetch all properties for "similar properties" feature
+  useEffect(() => {
+    async function loadAllProperties() {
+      try {
+        const properties = await getProperties();
+        setAllProperties(properties);
+      } catch (error) {
+        console.error('Error loading all properties:', error);
+        // Fallback to static data
+        setAllProperties(fallbackProperties);
+      }
+    }
+
+    loadAllProperties();
+  }, []);
 
   const translations = {
     es: {
