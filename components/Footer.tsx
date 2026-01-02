@@ -63,9 +63,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Logo & Description */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <MiralunaLogo className="w-10 h-10" />
-              <span className="text-xl font-bold">
+            <div className="flex items-center gap-2">
+              <MiralunaLogo className="w-7 h-7" />
+              <span className="text-lg font-bold">
                 mira<span className="text-primary">luna</span>
               </span>
             </div>
