@@ -85,18 +85,38 @@ def extract_number(text: str) -> int:
     return int(match.group()) if match else 0
 
 
+def normalize_location_text(text: str) -> str:
+    """Normalize location text to handle Valencian/Spanish variations.
+
+    Xàbia (Valencian) = Javea (Spanish)
+    """
+    # Replace Valencian spelling with Spanish
+    text = re.sub(r'X[àa]bia', 'Javea', text, flags=re.IGNORECASE)
+    return text
+
+
 def map_property_type(type_text: str) -> str:
     """Map property type from source to our format."""
     lower = type_text.lower()
+
+    # Apartment/Penthouse
+    if 'apartment' in lower or 'penthouse' in lower:
+        return 'apartment'
+
+    # Villa/House
     if 'villa' in lower:
         return 'house'
-    if 'apartment' in lower or 'penthouse' in lower:
+
+    # Townhouse
+    if 'townhouse' in lower or 'town house' in lower:
         return 'house'
-    if 'townhouse' in lower:
-        return 'house'
+
+    # Plot/Land
     if 'plot' in lower or 'land' in lower:
         return 'plot'
-    return 'house'  # default
+
+    # Default
+    return 'house'
 
 
 def map_location_to_area(location: str) -> str:
@@ -147,6 +167,7 @@ def scrape_property_detail(url: str) -> Dict:
     # Extract title
     title_elem = soup.select_one('#propertyTitle h1')
     title = title_elem.text.strip() if title_elem else 'Untitled Property'
+    title = normalize_location_text(title)  # Normalize Xàbia → Javea in title
 
     # Extract price
     price_elem = soup.select_one('.propRefCont .pricePV')
@@ -159,7 +180,11 @@ def scrape_property_detail(url: str) -> Dict:
     location_text = bullet_items[1].text if len(bullet_items) > 1 else ''
 
     property_type = map_property_type(type_text)
+
+    # Parse location: format is like "Jávea, Pueblo" or "Xàbia, Arenal"
+    # Remove any icons/labels and normalize
     location = re.sub(r'.*:', '', location_text).strip()
+    location = normalize_location_text(location)  # Xàbia → Javea
 
     # Extract bedrooms, bathrooms, sizes
     bedrooms = 0
@@ -209,6 +234,7 @@ def scrape_property_detail(url: str) -> Dict:
     # Extract description
     desc_elem = soup.select_one('.propDescCont')
     description = desc_elem.text.strip() if desc_elem else ''
+    description = normalize_location_text(description)  # Normalize Xàbia → Javea in description
 
     # Extract images
     images = []

@@ -50,6 +50,7 @@ def get_coordinates(address: str, location: str) -> Optional[Tuple[float, float]
     """Get latitude and longitude for an address.
 
     Uses hierarchical search: Javea → Alicante → Valencia → Spain
+    Handles both Javea (Spanish) and Xàbia (Valencian) spellings
     """
     # Create a cache key
     cache_key = f"{address}_{location}"
@@ -57,16 +58,20 @@ def get_coordinates(address: str, location: str) -> Optional[Tuple[float, float]
     if cache_key in geocode_cache:
         return geocode_cache[cache_key]
 
+    # Normalize location to remove Xàbia variations for consistent geocoding
+    # Geocoding works better with "Javea" than "Xàbia"
+    location_clean = normalize_location(location)
+
     # Hierarchical search queries with proper location structure
     # Javea is in Alicante province, which is in Valencia autonomous community, which is in Spain
     search_queries = [
-        f"{address}, {location}, Jávea, Alicante, Spain",
-        f"{location}, Jávea, Alicante, Valencia, Spain",
-        f"{location}, Jávea, Alicante, Spain",
-        f"{location}, Jávea, Spain",
-        f"Jávea, Alicante, Valencia, Spain",
-        f"{location}, Alicante, Valencia, Spain",
-        f"{location}, Valencia, Spain",
+        f"{address}, {location_clean}, Javea, Alicante, Spain",
+        f"{location_clean}, Javea, Alicante, Valencia, Spain",
+        f"{location_clean}, Javea, Alicante, Spain",
+        f"{location_clean}, Javea, Spain",
+        f"Javea, Alicante, Valencia, Spain",
+        f"{location_clean}, Alicante, Valencia, Spain",
+        f"{location_clean}, Valencia, Spain",
     ]
 
     for query in search_queries:
@@ -94,17 +99,18 @@ def get_coordinates(address: str, location: str) -> Optional[Tuple[float, float]
 def normalize_location(location: str) -> str:
     """Normalize location string for better comparison.
 
-    Handles variations like: Jávea/Javea, Xàbia/Xabia, etc.
+    Handles variations like: Jávea/Javea, Xàbia/Xabia (Valencian/Spanish), etc.
     """
     normalized = location.lower().strip()
 
-    # Normalize common variations
+    # Normalize common variations (Valencian/Spanish)
     replacements = {
         'xàbia': 'javea',
         'xabia': 'javea',
         'jávea': 'javea',
-        'arenal beach': 'arenal',
+        'pueblo': 'casco antiguo',  # Pueblo = Old Town
         'old town': 'casco antiguo',
+        'arenal beach': 'arenal',
         'puerto': 'port',
         'portichol': 'portitxol',
     }
@@ -115,69 +121,48 @@ def normalize_location(location: str) -> str:
     return normalized
 
 
-def are_properties_duplicate(prop1: Dict, prop2: Dict, max_distance_m: float = 30) -> bool:
-    """Check if two properties are duplicates.
+def are_properties_duplicate(prop1: Dict, prop2: Dict, max_distance_m: float = 5) -> bool:
+    """Check if two properties are duplicates - VERY STRICT for single-source scraping.
 
-    Enhanced deduplication with:
-    - Stricter geospatial proximity (30m instead of 50m)
-    - Location hierarchy awareness (Javea → Alicante → Valencia → Spain)
-    - Better price comparison
-    - Same-source reference checking
-    - Normalized title comparison
+    Since we're scraping from a single website (javeahomefinders.com), duplicates should
+    be EXTREMELY rare. Only mark as duplicate if:
+    1. EXACT same source_reference (primary key)
+    2. OR virtually identical coordinates (<5m) AND EXACT same price AND same type
+
+    This prevents false positives from removing 30%+ of legitimate properties.
     """
     # PRIORITY 1: Same source reference = definite duplicate
+    # This is the ONLY reliable way to detect duplicates from the same source
     ref1 = prop1.get('source_reference', '').strip()
     ref2 = prop2.get('source_reference', '').strip()
+
     if ref1 and ref2 and ref1 == ref2:
+        print(f"    🔄 Duplicate reference: {ref1}")
         return True
 
-    # PRIORITY 2: Geospatial proximity with price similarity
+    # PRIORITY 2: VERY strict geospatial + price check (only for geocoded properties)
+    # Only if both have coordinates (don't compare properties without coords)
     coords1 = prop1.get('coordinates')
     coords2 = prop2.get('coordinates')
 
     if coords1 and coords2:
         distance = geodesic(coords1, coords2).meters
 
-        # Stricter distance check (30m instead of 50m)
+        # VERY strict: within 5 meters (not 30m!) AND exact price AND same type
         if distance < max_distance_m:
-            price1 = prop1['price']
-            price2 = prop2['price']
+            price1 = prop1.get('price', 0)
+            price2 = prop2.get('price', 0)
+            type1 = prop1.get('type', '')
+            type2 = prop2.get('type', '')
 
-            # Price within 5% AND same property type = duplicate
-            if price1 > 0 and price2 > 0:
-                price_diff = abs(price1 - price2) / max(price1, price2)
-                same_type = prop1.get('type') == prop2.get('type')
+            # Prices must be EXACTLY the same (not within %)
+            # Types must be EXACTLY the same
+            if price1 == price2 and type1 == type2 and price1 > 0:
+                print(f"    🔄 Duplicate coords: {distance:.1f}m apart, same price €{price1}")
+                return True
 
-                if price_diff < 0.05 and same_type:
-                    return True
-
-                # If VERY close (10m) and similar price (15%), likely duplicate
-                if distance < 10 and price_diff < 0.15:
-                    return True
-
-    # PRIORITY 3: Normalized location + title + price
-    loc1 = normalize_location(prop1.get('location', ''))
-    loc2 = normalize_location(prop2.get('location', ''))
-
-    if loc1 and loc2 and loc1 == loc2:
-        title1 = prop1['title'].lower().strip()
-        title2 = prop2['title'].lower().strip()
-
-        # Exact title match + same price = duplicate
-        if title1 == title2 and prop1['price'] == prop2['price']:
-            return True
-
-        # Very similar title (80% similarity) + close price (5%)
-        if title1 and title2:
-            # Simple similarity: count matching words
-            words1 = set(title1.split())
-            words2 = set(title2.split())
-            if words1 and words2:
-                similarity = len(words1 & words2) / max(len(words1), len(words2))
-                price_diff = abs(prop1['price'] - prop2['price']) / max(prop1['price'], prop2['price']) if prop1['price'] > 0 else 1
-
-                if similarity > 0.8 and price_diff < 0.05:
-                    return True
+    # Do NOT use title/location similarity - too many false positives
+    # Properties in the same neighborhood often have similar titles
 
     return False
 
@@ -457,13 +442,14 @@ def extract_municipality_and_area(location: str) -> Tuple[str, Optional[str]]:
     """Extract municipality and area from location string.
 
     Returns (municipality, area_slug)
-    Municipality is always 'Javea' for this scraper
-    Area is mapped to neighborhood slugs
+    Handles both Javea/Jávea (Spanish) and Xàbia/Xabia (Valencian)
+    Area is mapped to neighborhood slugs matching Supabase areas table
     """
-    municipality = 'Javea'  # Default for this scraper
+    municipality = 'Javea'  # Default for this scraper (normalize to Spanish spelling)
     area = None
 
-    location_lower = location.lower()
+    # Normalize location first (Xàbia → Javea, etc.)
+    location_normalized = normalize_location(location)
 
     # Map location to area slugs (matching Supabase areas table)
     area_mappings = {
@@ -475,7 +461,7 @@ def extract_municipality_and_area(location: str) -> Tuple[str, Optional[str]]:
         'port': 'puerto',
         'old town': 'casco-antiguo',
         'casco antiguo': 'casco-antiguo',
-        'pueblo': 'casco-antiguo',
+        'pueblo': 'casco-antiguo',  # Pueblo = Old Town
         'cap marti': 'cap-marti',
         'cap martí': 'cap-marti',
         'granadella': 'granadella',
@@ -490,7 +476,7 @@ def extract_municipality_and_area(location: str) -> Tuple[str, Optional[str]]:
     }
 
     for key, slug in area_mappings.items():
-        if key in location_lower:
+        if key in location_normalized:
             area = slug
             break
 
