@@ -37,6 +37,7 @@ load_dotenv('.env.local')
 
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+REVALIDATE_SECRET = os.getenv('REVALIDATE_SECRET')
 
 
 # ============================================================================
@@ -499,10 +500,9 @@ def main():
         print("\n💡 To actually upload, run with --upload flag")
         print("💡 To translate first, run with --translate flag")
     else:
-        url = "https://yourdomain.com/api/revalidate"
-
+        url = "https://javea-real-estate.vercel.app/api/revalidate"
         headers = {
-            "x-revalidate-secret": "super-secret-string"
+            "x-revalidate-secret": REVALIDATE_SECRET
         }
 
         res = requests.post(url, headers=headers, timeout=10)
