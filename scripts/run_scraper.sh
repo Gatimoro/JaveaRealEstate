@@ -26,20 +26,20 @@ echo ""
 
 # Step 1: Scrape properties
 echo -e "${BLUE}📥 Step 1: Scraping properties from javeahomefinders.com...${NC}"
-python3 scripts/scraper.py $UPLOAD_FLAG
+python scripts/scraper.py $UPLOAD_FLAG
 echo -e "${GREEN}✅ Scraping complete!${NC}"
 echo ""
 
 # Step 2: Process (and optionally upload)
 echo -e "${BLUE}🔄 Step 2: Processing (geocoding, translation, deduplication)...${NC}"
-python3 scripts/process_and_upload.py scraped-properties.json $UPLOAD_FLAG
+python scripts/process_and_upload.py scraped-properties.json $UPLOAD_FLAG
 echo -e "${GREEN}✅ Processing complete!${NC}"
 echo ""
 
 # Step 3: Sync back to local folder (only if uploading)
 if [[ -n "$UPLOAD_FLAG" ]]; then
     echo -e "${BLUE}💾 Step 3: Syncing from Supabase to local folder...${NC}"
-    python3 scripts/process_and_upload.py --sync synced-properties.json
+    python scripts/process_and_upload.py --sync synced-properties.json
     echo -e "${GREEN}✅ Sync complete!${NC}"
     echo ""
 fi
