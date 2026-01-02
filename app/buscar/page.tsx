@@ -242,7 +242,7 @@ function SearchContent() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-24">
+      <div className="container mx-auto px-2 sm:px-4 py-24">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">
@@ -371,9 +371,9 @@ function SearchContent() {
               </div>
             ) : filteredProperties.length > 0 ? (
               <>
-                <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))' }}>
+                <div className="grid gap-3 sm:gap-4 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))' }}>
                   {paginatedProperties.map((property) => (
-                    <div key={property.id} className="w-full">
+                    <div key={property.id} className="w-full max-w-sm">
                       {renderPropertyCard(property)}
                     </div>
                   ))}

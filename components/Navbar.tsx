@@ -135,9 +135,9 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <MiralunaLogo className="w-10 h-10 md:w-11 md:h-11 flex-shrink-0" />
-            <span className="text-3xl md:text-4xl font-bold">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <MiralunaLogo className="w-8 h-8 md:w-9 md:h-9 flex-shrink-0" />
+            <span className="text-2xl md:text-3xl font-bold">
               mira<span className="text-primary">luna</span>
             </span>
           </Link>
@@ -192,13 +192,13 @@ export default function Navbar() {
                     e.stopPropagation();
                     setShowUserMenu(!showUserMenu);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 h-10 rounded-lg border border-border hover:border-primary transition-colors"
+                  className="flex items-center gap-1 px-2 py-2 md:gap-2 md:px-4 rounded-lg border border-border hover:border-primary transition-colors"
                 >
-                  <User className="w-5 h-5" />
-                  <span className="text-sm font-medium">
+                  <User className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="hidden sm:inline text-sm font-medium max-w-[80px] md:max-w-[120px] truncate">
                     {user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3 h-3 md:w-4 md:h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* User Dropdown */}
@@ -244,12 +244,12 @@ export default function Navbar() {
                   e.stopPropagation();
                   setShowLangMenu(!showLangMenu);
                 }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-primary transition-colors"
+                className="flex items-center gap-1 px-2 py-2 md:gap-2 md:px-3 rounded-lg border border-border hover:border-primary transition-colors"
               >
-                <Globe className="w-4 h-4" />
+                <Globe className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="hidden sm:inline">{languageFlags[locale]}</span>
-                <span className="text-sm font-medium">{locale.toUpperCase()}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
+                <span className="text-xs md:text-sm font-medium">{locale.toUpperCase()}</span>
+                <ChevronDown className={`w-3 h-3 md:w-4 md:h-4 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Language Dropdown */}
