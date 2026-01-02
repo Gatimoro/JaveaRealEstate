@@ -62,6 +62,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="scroll-smooth">
+      <head>
+        <meta name="color-scheme" content="dark" />
+      </head>
       <body className="font-sans antialiased">
         <Providers>
           {children}

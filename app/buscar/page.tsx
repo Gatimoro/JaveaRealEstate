@@ -119,7 +119,7 @@ function SearchContent() {
       minSize: 'Минимальный размер (м²)',
       any: 'Любой',
       sizePlaceholder: 'м²',
-      noResults: 'Недвижимость не найдена',
+      noResults: 'Нет объектов недвижимости',
       clearFilters: 'Очистить фильтры',
       loading: 'Загрузка...',
       page: 'Страница',
@@ -371,9 +371,9 @@ function SearchContent() {
               </div>
             ) : filteredProperties.length > 0 ? (
               <>
-                <div className="grid gap-3 sm:gap-4 justify-items-center" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mx-auto max-w-[95%] sm:max-w-full">
                   {paginatedProperties.map((property) => (
-                    <div key={property.id} className="w-full max-w-sm">
+                    <div key={property.id} className="w-full">
                       {renderPropertyCard(property)}
                     </div>
                   ))}
