@@ -102,8 +102,8 @@ def get_coordinates(title: str, location: str) -> Optional[Tuple[float, float]]:
     # Extract location from title (e.g., "Costa Nova", "Cumbres Del Tosalet")
     title_locations = extract_location_from_title(title)
 
-    # Normalize location field to remove Xàbia variations
-    location_clean = normalize_location(location)
+    # Strip "Javea" from location field (e.g., "Javea, Cansalades" -> "Cansalades")
+    location_clean = strip_javea_from_location(location)
 
     # Build search queries - prioritize title locations over generic location field
     search_queries = []
@@ -116,15 +116,15 @@ def get_coordinates(title: str, location: str) -> Optional[Tuple[float, float]]:
             f"{title_loc_clean}, Javea, Spain",
         ])
 
-    # Priority 2: Location field from property listing
-    if location_clean and location_clean != 'javea':
+    # Priority 2: Location field from property listing (with Javea stripped)
+    if location_clean:
         search_queries.extend([
             f"{location_clean}, Javea, Alicante, Spain",
             f"{location_clean}, Javea, Spain",
         ])
 
     # Priority 3: Broader queries (but NOT generic "Javea, Alicante, Spain" - too generic)
-    if location_clean and location_clean != 'javea':
+    if location_clean:
         search_queries.extend([
             f"{location_clean}, Alicante, Valencia, Spain",
             f"{location_clean}, Valencia, Spain",
@@ -202,6 +202,33 @@ def normalize_location(location: str) -> str:
         normalized = normalized.replace(old, new)
 
     return normalized
+
+
+def strip_javea_from_location(location: str) -> str:
+    """Remove 'Javea' or 'Xàbia' prefix/suffix from location for geocoding.
+
+    Examples:
+    - "Javea, Cansalades" -> "Cansalades"
+    - "Jávea, Villes del Vent" -> "Villes del Vent"
+    - "Cansalades, Javea" -> "Cansalades"
+    - "Cansalades" -> "Cansalades"
+    """
+    if not location:
+        return location
+
+    # First normalize to handle variations
+    normalized = normalize_location(location)
+
+    # Split by comma and strip whitespace
+    parts = [p.strip() for p in normalized.split(',')]
+
+    # Remove any parts that are just "javea"
+    filtered_parts = [p for p in parts if p and p != 'javea']
+
+    # Join back and return
+    result = ', '.join(filtered_parts) if filtered_parts else ''
+
+    return result
 
 
 def are_properties_duplicate(prop1: Dict, prop2: Dict, max_distance_m: float = 5) -> bool:
