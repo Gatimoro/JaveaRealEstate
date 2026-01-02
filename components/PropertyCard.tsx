@@ -33,7 +33,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const title = getPropertyTitle(property, locale);
 
   return (
-    <Link href={`/propiedad/${property.id}`} className="group flex-shrink-0 w-full min-w-[280px] max-w-[320px] bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
+    <Link href={`/propiedad/${property.id}`} className="group w-full max-w-md sm:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img

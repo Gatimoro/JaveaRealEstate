@@ -371,12 +371,8 @@ function SearchContent() {
               </div>
             ) : filteredProperties.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mx-auto max-w-[95%] sm:max-w-full">
-                  {paginatedProperties.map((property) => (
-                    <div key={property.id} className="w-full">
-                      {renderPropertyCard(property)}
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full place-items-center sm:place-items-stretch">
+                  {paginatedProperties.map((property) => renderPropertyCard(property))}
                 </div>
 
                 {/* Pagination Controls */}
