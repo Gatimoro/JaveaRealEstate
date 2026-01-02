@@ -65,7 +65,11 @@ export default function PropertyCarousel({
         {/* Horizontal Scrollable Row */}
         <div className="relative">
           <div className="flex gap-6 overflow-x-auto scrollbar-hidden pb-4 snap-x snap-mandatory">
-            {properties.map((property) => renderCard(property))}
+            {properties.map((property) => (
+              <div key={property.id} className="flex-shrink-0 w-[300px]">
+                {renderCard(property)}
+              </div>
+            ))}
           </div>
 
           {/* Fade gradient on sides */}

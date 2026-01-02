@@ -50,7 +50,7 @@ export async function getPropertyById(id: string): Promise<Property | null> {
 /**
  * Get properties by type
  */
-export async function getPropertiesByType(type: 'house' | 'investment' | 'plot'): Promise<Property[]> {
+export async function getPropertiesByType(type: 'house' | 'apartment' | 'investment' | 'plot'): Promise<Property[]> {
   const supabase = createClient();
 
   const { data, error } = await supabase

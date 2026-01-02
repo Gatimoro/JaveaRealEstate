@@ -1,6 +1,6 @@
 export interface Property {
   id: string;
-  type: 'house' | 'investment' | 'plot';
+  type: 'house' | 'apartment' | 'investment' | 'plot';
   title: string;
   titleEn?: string;
   titleRu?: string;
