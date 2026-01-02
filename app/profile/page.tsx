@@ -11,13 +11,16 @@ import PropertyCard from '@/components/PropertyCard';
 import InvestmentCard from '@/components/InvestmentCard';
 import PlotCard from '@/components/PlotCard';
 import { useSavedProperties } from '@/lib/savedProperties';
-import { allProperties } from '@/data/properties';
+import { getProperties } from '@/lib/supabase/queries';
+import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage } from '@/lib/i18n';
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [propertiesLoading, setPropertiesLoading] = useState(true);
   const router = useRouter();
   const { savedProperties } = useSavedProperties();
   const { locale } = useLanguage();
@@ -38,6 +41,25 @@ export default function ProfilePage() {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch properties from Supabase
+  useEffect(() => {
+    async function loadProperties() {
+      try {
+        setPropertiesLoading(true);
+        const properties = await getProperties();
+        setAllProperties(properties);
+      } catch (error) {
+        console.error('Error loading properties from Supabase:', error);
+        // Fallback to static data
+        setAllProperties(fallbackProperties);
+      } finally {
+        setPropertiesLoading(false);
+      }
+    }
+
+    loadProperties();
   }, []);
 
   const translations = {

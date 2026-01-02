@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Bed, Bath, Maximize, MapPin, ExternalLink, Crop, ChevronLeft, ChevronRight } from 'lucide-react';
-import { allProperties } from '@/data/properties';
+import { getPropertyById } from '@/lib/supabase/queries';
+import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
 
@@ -14,8 +15,35 @@ export default function PropertyDetailPage() {
   const id = params.id as string;
   const { locale } = useLanguage();
 
-  const property = allProperties.find((p) => p.id === id);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // Fetch property from Supabase
+  useEffect(() => {
+    async function loadProperty() {
+      try {
+        setIsLoading(true);
+        const prop = await getPropertyById(id);
+        if (prop) {
+          setProperty(prop);
+        } else {
+          // Fallback to static data
+          const fallbackProp = fallbackProperties.find((p) => p.id === id);
+          setProperty(fallbackProp || null);
+        }
+      } catch (error) {
+        console.error('Error loading property from Supabase:', error);
+        // Fallback to static data
+        const fallbackProp = fallbackProperties.find((p) => p.id === id);
+        setProperty(fallbackProp || null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProperty();
+  }, [id]);
 
   const translations = {
     es: {
@@ -99,6 +127,17 @@ export default function PropertyDetailPage() {
   };
 
   const t = translations[locale];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-4 text-muted-foreground">Cargando propiedad...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!property) {
     return (
