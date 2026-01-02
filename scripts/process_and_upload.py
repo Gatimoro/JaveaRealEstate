@@ -29,16 +29,9 @@ from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from translatepy import Translator
 
-# Load environment variables from .env, .env.local, or local.env
-load_dotenv()  # Default .env
-load_dotenv('.env.local', override=True)  # Override with .env.local if exists
-load_dotenv('local.env', override=True)  # Override with local.env if exists
+# Load environment variables from .env.local
+load_dotenv('.env.local')
 
-# Hardcoded keys (ONLY for local development - comment out if using .env files)
-# SUPABASE_URL = "https://xxxxx.supabase.co"
-# SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxx"
-
-# Get from environment (will use hardcoded values if not found in env)
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 

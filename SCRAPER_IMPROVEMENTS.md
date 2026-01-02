@@ -25,31 +25,19 @@ This is perfect when you want to:
 - Work with property data offline
 - Debug or analyze properties locally
 
-### 2. **Flexible Environment Configuration** 🔧
+### 2. **Simple Environment Configuration** 🔧
 
-Now supports multiple ways to configure your API keys:
+Uses `.env.local` for Supabase credentials (standard Next.js approach):
 
-**Option 1: Use local.env (Recommended for local dev)**
 ```bash
-cp local.env.example local.env
-# Edit local.env with your actual keys
-```
-
-**Option 2: Use .env.local (Next.js style)**
-```bash
+# Copy the template
 cp .env.example .env.local
-# Edit .env.local with your actual keys
+
+# Edit with your actual Supabase keys
+nano .env.local
 ```
 
-**Option 3: Hardcode keys directly (Quick & dirty)**
-Edit `scripts/scraper.py` and `scripts/process_and_upload.py`:
-```python
-# Uncomment these lines (around line 32-34 in scraper.py, 37-39 in process_and_upload.py)
-SUPABASE_URL = "https://yourproject.supabase.co"
-SUPABASE_SERVICE_KEY = "your-service-role-key-here"
-```
-
-⚠️ **Important**: Never commit hardcoded credentials to version control!
+The scraper scripts will automatically read from `.env.local` - no need for multiple env files or hardcoded values!
 
 ### 3. **Smarter Deduplication** 🧹
 
@@ -187,35 +175,23 @@ After running the full pipeline, you'll have:
 
 ## 🔧 Configuration
 
-### Setup local.env
+### Setup .env.local
 
 ```bash
 # Copy the template
-cp local.env.example local.env
+cp .env.example .env.local
 
-# Edit with your actual credentials
-nano local.env
+# Edit with your actual Supabase credentials
+nano .env.local
 ```
 
-Add your Supabase credentials:
-```
+Make sure these values are set in `.env.local`:
+```bash
 NEXT_PUBLIC_SUPABASE_URL=https://yourproject.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-key-here
 ```
 
-### Alternative: Hardcode Keys
-
-If you prefer not to use .env files, you can hardcode the keys:
-
-1. Open `scripts/scraper.py`
-2. Find lines 32-34
-3. Uncomment and add your keys:
-```python
-SUPABASE_URL = "https://yourproject.supabase.co"
-SUPABASE_SERVICE_KEY = "your-service-role-key-here"
-```
-
-4. Do the same in `scripts/process_and_upload.py` (lines 37-39)
+The scraper will automatically load these values from `.env.local`.
 
 ## 🧪 Testing
 
@@ -249,16 +225,17 @@ print(f'New: {len(synced) - len(baseline)} properties added')
 | Geocoding success rate | ~70% | ~85% | +15% |
 | Location hierarchy | Incomplete | Complete | ✅ |
 | Sync to local | Manual | Automated | ✅ |
-| Config flexibility | .env only | .env/.env.local/local.env/hardcode | ✅ |
+| Config flexibility | .env only | .env.local (standard Next.js) | ✅ |
 
 ## 🐛 Troubleshooting
 
 ### "Missing Supabase credentials" error
 
-Make sure you have ONE of these configured:
-- `local.env` file with credentials
-- `.env.local` file with credentials
-- Hardcoded values in the Python scripts
+Make sure you have a `.env.local` file with your Supabase credentials:
+```bash
+cp .env.example .env.local
+# Then edit .env.local with your actual keys
+```
 
 ### Geocoding is slow
 
@@ -276,7 +253,7 @@ Check that:
 
 The scraper now has:
 - ✅ Force sync from Supabase to local JSON
-- ✅ Multiple environment configuration options (local.env, .env.local, hardcoded)
+- ✅ Simple .env.local configuration (standard Next.js)
 - ✅ Improved deduplication (30m radius, multi-priority matching, location normalization)
 - ✅ Correct geolocation hierarchy (Javea → Alicante → Valencia → Spain)
 - ✅ Municipality and area extraction
