@@ -3,7 +3,8 @@
 import { useState, useMemo, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { allProperties } from '@/data/properties';
+import { getProperties } from '@/lib/supabase/queries';
+import { allProperties as fallbackProperties } from '@/data/properties';
 import PropertyCard from '@/components/PropertyCard';
 import InvestmentCard from '@/components/InvestmentCard';
 import PlotCard from '@/components/PlotCard';
@@ -17,6 +18,29 @@ function SearchContent() {
   const query = searchParams.get('q') || '';
   const typeParam = searchParams.get('type') || 'all';
   const { locale } = useLanguage();
+
+  // State for properties
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch properties from Supabase
+  useEffect(() => {
+    async function loadProperties() {
+      try {
+        setIsLoading(true);
+        const properties = await getProperties();
+        setAllProperties(properties);
+      } catch (error) {
+        console.error('Error loading properties from Supabase:', error);
+        // Fallback to static data
+        setAllProperties(fallbackProperties);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProperties();
+  }, []);
 
   const translations = {
     es: {
@@ -340,7 +364,12 @@ function SearchContent() {
 
           {/* Results Grid */}
           <div className="flex-1">
-            {filteredProperties.length > 0 ? (
+            {isLoading ? (
+              <div className="py-20 text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+                <p className="mt-4 text-muted-foreground">{t.loading}</p>
+              </div>
+            ) : filteredProperties.length > 0 ? (
               <>
                 <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))' }}>
                   {paginatedProperties.map((property) => (
