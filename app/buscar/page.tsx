@@ -13,6 +13,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ListingStatistics from '@/components/ListingStatistics';
 import { useLanguage, getLocalizedField } from '@/lib/i18n';
+export const dynamic = 'force-dynamic'
 
 function SearchContent() {
   const searchParams = useSearchParams();
