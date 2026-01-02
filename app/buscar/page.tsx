@@ -11,6 +11,7 @@ import PlotCard from '@/components/PlotCard';
 import type { Property } from '@/data/properties';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ListingStatistics from '@/components/ListingStatistics';
 import { useLanguage, getLocalizedField } from '@/lib/i18n';
 
 function SearchContent() {
@@ -52,7 +53,8 @@ function SearchContent() {
       clear: 'Limpiar',
       propertyType: 'Tipo de propiedad',
       all: 'Todas',
-      housesApartments: 'Casas y Pisos',
+      houses: 'Casas',
+      apartments: 'Apartamentos',
       investments: 'Inversiones',
       plots: 'Parcelas',
       price: 'Precio',
@@ -80,7 +82,8 @@ function SearchContent() {
       clear: 'Clear',
       propertyType: 'Property type',
       all: 'All',
-      housesApartments: 'Houses & Apartments',
+      houses: 'Houses',
+      apartments: 'Apartments',
       investments: 'Investments',
       plots: 'Land Plots',
       price: 'Price',
@@ -108,7 +111,8 @@ function SearchContent() {
       clear: 'Очистить',
       propertyType: 'Тип недвижимости',
       all: 'Все',
-      housesApartments: 'Дома и квартиры',
+      houses: 'Дома',
+      apartments: 'Квартиры',
       investments: 'Инвестиции',
       plots: 'Участки',
       price: 'Цена',
@@ -203,7 +207,7 @@ function SearchContent() {
         matchesType
       );
     });
-  }, [query, filters]);
+  }, [query, filters, allProperties, locale]);
 
   const clearFilters = () => {
     setFilters({
@@ -287,7 +291,8 @@ function SearchContent() {
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="all">{t.all}</option>
-                    <option value="house">{t.housesApartments}</option>
+                    <option value="house">{t.houses}</option>
+                    <option value="apartment">{t.apartments}</option>
                     <option value="investment">{t.investments}</option>
                     <option value="plot">{t.plots}</option>
                   </select>
@@ -371,7 +376,7 @@ function SearchContent() {
               </div>
             ) : filteredProperties.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full place-items-center sm:place-items-stretch">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full justify-items-center sm:justify-items-stretch">
                   {paginatedProperties.map((property) => renderPropertyCard(property))}
                 </div>
 
@@ -473,6 +478,11 @@ function SearchContent() {
           </div>
         </div>
       </div>
+
+      {/* Statistics Section */}
+      {!isLoading && allProperties.length > 0 && (
+        <ListingStatistics properties={allProperties} />
+      )}
 
       <Footer />
     </div>

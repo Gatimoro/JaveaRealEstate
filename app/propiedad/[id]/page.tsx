@@ -498,7 +498,7 @@ export default function PropertyDetailPage() {
         {similarProperties.length > 0 && (
           <div className="mt-16 pt-8 border-t border-border">
             <h2 className="text-3xl font-bold mb-6">{t.similarProperties}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full place-items-center md:place-items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full justify-items-center md:justify-items-stretch">
               {similarProperties.map((similar) => {
                 const similarTitle = getPropertyTitle(similar, locale);
                 return (

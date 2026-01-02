@@ -299,7 +299,7 @@ export const languageFlags: Record<Locale, string> = {
 
 // Get property title with intelligent fallback
 export function getPropertyTitle(
-  property: { title: string; titleEn?: string; titleRu?: string; type?: 'house' | 'investment' | 'plot' },
+  property: { title: string; titleEn?: string; titleRu?: string; type?: 'house' | 'apartment' | 'investment' | 'plot' },
   locale: Locale
 ): string {
   // Try to get translated title
@@ -313,11 +313,13 @@ export function getPropertyTitle(
     const fallbacks = {
       en: {
         house: 'House',
+        apartment: 'Apartment',
         investment: 'Investment Opportunity',
         plot: 'Land Plot',
       },
       ru: {
         house: 'Дом',
+        apartment: 'Квартира',
         investment: 'Инвестиционная возможность',
         plot: 'Участок',
       },
