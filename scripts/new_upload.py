@@ -147,44 +147,74 @@ def add_translations(prop: Dict) -> Dict:
     """
     Add Spanish and Russian translations to property.
     Source is English (the scraped descriptions are in English).
-    
+
     Args:
-        prop: Property dict with 'title' and 'description' in English
-    
+        prop: Property dict with 'title', 'description', and 'features' in English
+
     Returns:
-        Property with title_es, title_ru, description_es, description_ru added
+        Property with title_XX, description_XX, features_XX added (XX = en, es, ru)
     """
     result = prop.copy()
-    
+
     title = prop.get('title', '')
     description = prop.get('description', '')
-    
+    features = prop.get('features', [])
+
     # The original is English, so store as _en
     result['title_en'] = title
     result['description_en'] = description
-    
+    result['features_en'] = features
+
     # Translate title to Spanish
     print(f"    🇪🇸 Translating title to Spanish...")
     result['title_es'] = translate_title(title, 'es')
-    
-    # Translate title to Russian  
+
+    # Translate title to Russian
     print(f"    🇷🇺 Translating title to Russian...")
     result['title_ru'] = translate_title(title, 'ru')
-    
+
     # Translate description to Spanish
     if description and len(description) > 20:
         print(f"    🇪🇸 Translating description to Spanish ({len(description)} chars)...")
         result['description_es'] = translate_text(description, 'es')
     else:
         result['description_es'] = description
-    
+
     # Translate description to Russian
     if description and len(description) > 20:
         print(f"    🇷🇺 Translating description to Russian...")
         result['description_ru'] = translate_text(description, 'ru')
     else:
         result['description_ru'] = description
-    
+
+    # Translate features to Spanish
+    if features:
+        print(f"    🇪🇸 Translating {len(features)} features to Spanish...")
+        features_es = []
+        for feature in features:
+            try:
+                translated = translate_text(feature, 'es')
+                features_es.append(translated if translated else feature)
+                time.sleep(0.1)  # Rate limiting
+            except Exception as e:
+                print(f"      ⚠️ Error translating feature '{feature}': {e}")
+                features_es.append(feature)
+        result['features_es'] = features_es
+
+    # Translate features to Russian
+    if features:
+        print(f"    🇷🇺 Translating {len(features)} features to Russian...")
+        features_ru = []
+        for feature in features:
+            try:
+                translated = translate_text(feature, 'ru')
+                features_ru.append(translated if translated else feature)
+                time.sleep(0.1)  # Rate limiting
+            except Exception as e:
+                print(f"      ⚠️ Error translating feature '{feature}': {e}")
+                features_ru.append(feature)
+        result['features_ru'] = features_ru
+
     return result
 
 
@@ -210,17 +240,17 @@ def prepare_for_upload(prop: Dict) -> Dict:
     """
     Prepare property dict for Supabase upload.
     Maps our scraped structure to database schema.
-    
+
     Database schema has:
     - type: must be 'house', 'investment', or 'plot' (constraint)
     - location: text field (we'll put municipality + area here)
-    - NO area, municipality, or currency columns
+    - Multilingual support: EN, ES, RU for titles, descriptions, and features
     """
     # Map property type to allowed values in DB constraint
     prop_type = prop.get('type', 'house')
     type_mapping = {
         'apartment': 'house',      # Map apartment -> house
-        'townhouse': 'house',      # Map townhouse -> house  
+        'townhouse': 'house',      # Map townhouse -> house
         'villa': 'house',
         'house': 'house',
         'finca': 'house',
@@ -230,7 +260,7 @@ def prepare_for_upload(prop: Dict) -> Dict:
         'investment': 'investment',
     }
     db_type = type_mapping.get(prop_type.lower(), 'house')
-    
+
     # Build location string from municipality + area
     municipality = prop.get('municipality', 'Jávea')
     area_display = prop.get('area_display') or prop.get('area', '')
@@ -238,26 +268,38 @@ def prepare_for_upload(prop: Dict) -> Dict:
         location = f"{municipality}, {area_display}"
     else:
         location = prop.get('location_raw') or municipality
-    
+
     # Build specs - include original type for reference
     specs = prop.get('specs', {}).copy() if prop.get('specs') else {}
     specs['original_type'] = prop_type  # Preserve original type in specs
     if prop.get('area'):
         specs['area_slug'] = prop.get('area')  # Preserve area slug in specs
-    
+
     return {
         'id': prop['id'],
         'type': db_type,
-        'title': prop['title'],
-        'title_en': prop.get('title_en') or prop.get('title'),
+        # Original title and description (English from scraper)
+        'title': prop.get('title'),
+        'description': prop.get('description'),
+        # English translations (same as original)
+        'title_en': prop.get('title_en'),
+        'description_en': prop.get('description_en'),
+        # Spanish translations
+        'title_es': prop.get('title_es'),
+        'description_es': prop.get('description_es'),
+        # Russian translations
         'title_ru': prop.get('title_ru'),
+        'description_ru': prop.get('description_ru'),
+        # Basic info
         'price': prop['price'],
         'location': location,
-        'description': prop.get('description'),
-        'description_en': prop.get('description_en') or prop.get('description'),
-        'description_ru': prop.get('description_ru'),
         'images': prop.get('images', []),
+        # Features (multilingual)
         'features': prop.get('features', []),
+        'features_en': prop.get('features_en'),
+        'features_es': prop.get('features_es'),
+        'features_ru': prop.get('features_ru'),
+        # Specs and metadata
         'specs': specs,
         'source_url': prop.get('source_url'),
         'source_reference': prop.get('source_reference'),
