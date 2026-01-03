@@ -33,7 +33,7 @@ import requests
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv('.env.local')
+load_dotenv()
 
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
@@ -493,7 +493,7 @@ def main():
     if args.sample or args.translate:
         print_sample(properties)
     
-    # Upload
+    Upload
     result = upload_properties(properties, dry_run=not args.upload)
     
     if not args.upload:
@@ -508,7 +508,7 @@ def main():
         res = requests.post(url, headers=headers, timeout=10)
 
         print(res.status_code, res.text)
-        print("Cache should have been dropped")
+        if res.status_code == 200: print("Told supabase to drop the cache yo.")
 
 
 if __name__ == '__main__':
