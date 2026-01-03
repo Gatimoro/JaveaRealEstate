@@ -1,86 +1,60 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import CategoryCards from '@/components/CategoryCards';
-import PropertyCarousel from '@/components/PropertyCarousel';
 import AnalyticsSection from '@/components/AnalyticsSection';
 import AboutSection from '@/components/AboutSection';
 import ContactSection from '@/components/ContactSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
-import { useLanguage } from '@/lib/i18n';
-import { getPropertiesByType, getPropertyBadges } from '@/lib/supabase/queries';
+import HomeContent from '@/components/HomeContent';
+import { getPropertiesByType, getPropertyBadges } from '@/lib/supabase/server-queries';
 import type { Property } from '@/data/properties';
 
-export default function Home() {
-  const { locale } = useLanguage();
-  const [houses, setHouses] = useState<Property[]>([]);
-  const [investments, setInvestments] = useState<Property[]>([]);
-  const [plots, setPlots] = useState<Property[]>([]);
-  const [badges, setBadges] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(true);
+/**
+ * Home Page - Server Component
+ *
+ * Fetches data on the server with 24-hour caching.
+ * Data is passed to client components for interactivity.
+ */
+export default async function Home() {
+  // Fetch all data on the server (cached for 24 hours!)
+  let houses: Property[] = [];
+  let investments: Property[] = [];
+  let plots: Property[] = [];
+  let badges: Record<string, string> = {};
 
-  useEffect(() => {
-    async function loadProperties() {
-      try {
-        setIsLoading(true);
+  try {
+    // Fetch all property types in parallel (cached!)
+    const [housesData, investmentsData, plotsData, badgesData] = await Promise.all([
+      getPropertiesByType('house'),
+      getPropertiesByType('investment'),
+      getPropertiesByType('plot'),
+      getPropertyBadges(),
+    ]);
 
-        // Fetch all property types in parallel
-        const [housesData, investmentsData, plotsData, badgesData] = await Promise.all([
-          getPropertiesByType('house'),
-          getPropertiesByType('investment'),
-          getPropertiesByType('plot'),
-          getPropertyBadges(),
-        ]);
+    houses = housesData;
+    investments = investmentsData;
+    plots = plotsData;
+    badges = badgesData;
+  } catch (error) {
+    console.error('Error loading properties:', error);
+    // Fallback to static data if Supabase fails
+    const { houses: staticHouses, investments: staticInvestments, plots: staticPlots } = await import('@/data/properties');
+    houses = staticHouses;
+    investments = staticInvestments;
+    plots = staticPlots;
+  }
 
-        // Apply badges to properties
-        const applyBadges = (properties: Property[]) =>
-          properties.map(p => ({
-            ...p,
-            badge: badgesData[p.id] || p.badge,
-          }));
+  // Apply badges to properties
+  const applyBadges = (properties: Property[]) =>
+    properties.map(p => ({
+      ...p,
+      badge: badges[p.id] || p.badge,
+    }));
 
-        setHouses(applyBadges(housesData));
-        setInvestments(applyBadges(investmentsData));
-        setPlots(applyBadges(plotsData));
-        setBadges(badgesData);
-      } catch (error) {
-        console.error('Error loading properties:', error);
-        // Fallback to static data if Supabase fails
-        import('@/data/properties').then(({ houses: staticHouses, investments: staticInvestments, plots: staticPlots }) => {
-          setHouses(staticHouses);
-          setInvestments(staticInvestments);
-          setPlots(staticPlots);
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadProperties();
-  }, []);
-
-  const translations = {
-    es: {
-      houses: 'Casas y Pisos',
-      investments: 'Oportunidades de Inversión',
-      plots: 'Parcelas',
-    },
-    en: {
-      houses: 'Houses & Apartments',
-      investments: 'Investment Opportunities',
-      plots: 'Land Plots',
-    },
-    ru: {
-      houses: 'Дома и квартиры',
-      investments: 'Инвестиционные возможности',
-      plots: 'Участки',
-    },
-  };
-
-  const t = translations[locale];
+  const housesWithBadges = applyBadges(houses);
+  const investmentsWithBadges = applyBadges(investments);
+  const plotsWithBadges = applyBadges(plots);
 
   return (
     <main className="relative min-h-screen">
@@ -88,30 +62,12 @@ export default function Home() {
       <HeroSection />
       <CategoryCards />
 
-      {isLoading ? (
-        <div className="py-20 text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-muted-foreground">Cargando propiedades...</p>
-        </div>
-      ) : (
-        <>
-          <PropertyCarousel
-            title={t.houses}
-            properties={houses}
-            id="casas"
-          />
-          <PropertyCarousel
-            title={t.investments}
-            properties={investments}
-            id="inversiones"
-          />
-          <PropertyCarousel
-            title={t.plots}
-            properties={plots}
-            id="parcelas"
-          />
-        </>
-      )}
+      {/* Pass server-fetched data to client component for interactivity */}
+      <HomeContent
+        houses={housesWithBadges}
+        investments={investmentsWithBadges}
+        plots={plotsWithBadges}
+      />
 
       <AnalyticsSection />
       <AboutSection />
