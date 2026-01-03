@@ -233,20 +233,44 @@ export function getLocalizedField<T extends Record<string, any>>(
   field: string,
   locale: Locale
 ): string {
-  // Try locale-specific field first (camelCase: descriptionEn, titleRu, etc.)
+  // Try locale-specific field - check BOTH snake_case (DB) and camelCase (static)
   const localeSuffix = locale.charAt(0).toUpperCase() + locale.slice(1);
-  const localizedKey = `${field}${localeSuffix}` as keyof T;
-  if (obj[localizedKey]) {
-    return obj[localizedKey] as string;
+
+  // Check camelCase first (e.g., descriptionEn, titleRu)
+  const camelCaseKey = `${field}${localeSuffix}` as keyof T;
+  if (obj[camelCaseKey]) {
+    return obj[camelCaseKey] as string;
   }
 
-  // Fallback to Spanish (camelCase: descriptionEs, titleEs, etc.)
-  const esKey = `${field}Es` as keyof T;
-  if (obj[esKey]) {
-    return obj[esKey] as string;
+  // Check snake_case (e.g., description_en, title_ru) - from Supabase
+  const snakeCaseKey = `${field}_${locale}` as keyof T;
+  if (obj[snakeCaseKey]) {
+    return obj[snakeCaseKey] as string;
   }
 
-  // Fallback to base field
+  // Fallback to Spanish - check both formats
+  const esCamelKey = `${field}Es` as keyof T;
+  if (obj[esCamelKey]) {
+    return obj[esCamelKey] as string;
+  }
+
+  const esSnakeKey = `${field}_es` as keyof T;
+  if (obj[esSnakeKey]) {
+    return obj[esSnakeKey] as string;
+  }
+
+  // Fallback to English - check both formats
+  const enCamelKey = `${field}En` as keyof T;
+  if (obj[enCamelKey]) {
+    return obj[enCamelKey] as string;
+  }
+
+  const enSnakeKey = `${field}_en` as keyof T;
+  if (obj[enSnakeKey]) {
+    return obj[enSnakeKey] as string;
+  }
+
+  // Final fallback to base field
   const baseKey = field as keyof T;
   if (obj[baseKey]) {
     return obj[baseKey] as string;
@@ -261,20 +285,44 @@ export function getLocalizedArray<T extends Record<string, any>>(
   field: string,
   locale: Locale
 ): string[] {
-  // Try locale-specific field first (camelCase: featuresEn, featuresRu, etc.)
+  // Try locale-specific field - check BOTH snake_case (DB) and camelCase (static)
   const localeSuffix = locale.charAt(0).toUpperCase() + locale.slice(1);
-  const localizedKey = `${field}${localeSuffix}` as keyof T;
-  if (obj[localizedKey] && Array.isArray(obj[localizedKey])) {
-    return obj[localizedKey] as string[];
+
+  // Check camelCase first (e.g., featuresEn, featuresRu)
+  const camelCaseKey = `${field}${localeSuffix}` as keyof T;
+  if (obj[camelCaseKey] && Array.isArray(obj[camelCaseKey])) {
+    return obj[camelCaseKey] as string[];
   }
 
-  // Fallback to Spanish (camelCase: featuresEs, etc.)
-  const esKey = `${field}Es` as keyof T;
-  if (obj[esKey] && Array.isArray(obj[esKey])) {
-    return obj[esKey] as string[];
+  // Check snake_case (e.g., features_en, features_ru) - from Supabase
+  const snakeCaseKey = `${field}_${locale}` as keyof T;
+  if (obj[snakeCaseKey] && Array.isArray(obj[snakeCaseKey])) {
+    return obj[snakeCaseKey] as string[];
   }
 
-  // Fallback to base field
+  // Fallback to Spanish - check both formats
+  const esCamelKey = `${field}Es` as keyof T;
+  if (obj[esCamelKey] && Array.isArray(obj[esCamelKey])) {
+    return obj[esCamelKey] as string[];
+  }
+
+  const esSnakeKey = `${field}_es` as keyof T;
+  if (obj[esSnakeKey] && Array.isArray(obj[esSnakeKey])) {
+    return obj[esSnakeKey] as string[];
+  }
+
+  // Fallback to English - check both formats
+  const enCamelKey = `${field}En` as keyof T;
+  if (obj[enCamelKey] && Array.isArray(obj[enCamelKey])) {
+    return obj[enCamelKey] as string[];
+  }
+
+  const enSnakeKey = `${field}_en` as keyof T;
+  if (obj[enSnakeKey] && Array.isArray(obj[enSnakeKey])) {
+    return obj[enSnakeKey] as string[];
+  }
+
+  // Final fallback to base field
   const baseKey = field as keyof T;
   if (obj[baseKey] && Array.isArray(obj[baseKey])) {
     return obj[baseKey] as string[];

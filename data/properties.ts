@@ -3,17 +3,32 @@ export interface Property {
   type: 'house' | 'apartment' | 'investment' | 'plot';
   title: string;
   titleEn?: string;
+  titleEs?: string;
   titleRu?: string;
+  // Support both camelCase (static) and snake_case (from DB)
+  title_en?: string;
+  title_es?: string;
+  title_ru?: string;
   price: number;
   location: string;
   images: string[];
   badge?: string;
   description?: string;
   descriptionEn?: string;
+  descriptionEs?: string;
   descriptionRu?: string;
+  // Support both camelCase (static) and snake_case (from DB)
+  description_en?: string;
+  description_es?: string;
+  description_ru?: string;
   features?: string[];
   featuresEn?: string[];
+  featuresEs?: string[];
   featuresRu?: string[];
+  // Support both camelCase (static) and snake_case (from DB)
+  features_en?: string[];
+  features_es?: string[];
+  features_ru?: string[];
   sourceUrl?: string;
   priceHistory?: { date: string; price: number }[];
   coordinates?: { lat: number; lng: number };
