@@ -3,21 +3,44 @@
  *
  * These functions run on the server and use Next.js caching.
  * Data is cached and revalidated daily by default.
+ *
+ * NOTE: For public data, we use a simple Supabase client without cookies
+ * to enable proper caching with unstable_cache.
  */
 
 import { unstable_cache } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import type { Property } from '@/data/properties';
 
 // Cache duration: 24 hours (86400 seconds)
 const CACHE_REVALIDATE = 86400;
 
 /**
+ * Create a simple Supabase client for public queries (no auth/cookies needed)
+ * This can be cached because it doesn't depend on request-specific data.
+ */
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+/**
  * Get all available properties from Supabase (Server-Side with Cache)
  */
 export const getProperties = unstable_cache(
   async (): Promise<Property[]> => {
-    const supabase = await createClient();
+    const supabase = getSupabaseClient();
 
     const { data, error } = await supabase
       .from('properties')
@@ -43,7 +66,7 @@ export const getProperties = unstable_cache(
  * Get a single property by ID (Server-Side with Cache)
  */
 export async function getPropertyById(id: string): Promise<Property | null> {
-  const supabase = await createClient();
+  const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('properties')
@@ -65,7 +88,7 @@ export async function getPropertyById(id: string): Promise<Property | null> {
 export function getPropertiesByType(type: 'house' | 'apartment' | 'investment' | 'plot') {
   return unstable_cache(
     async (): Promise<Property[]> => {
-      const supabase = await createClient();
+      const supabase = getSupabaseClient();
 
       const { data, error } = await supabase
         .from('properties')
@@ -94,7 +117,7 @@ export function getPropertiesByType(type: 'house' | 'apartment' | 'investment' |
  */
 export const getHotProperties = unstable_cache(
   async (): Promise<Property[]> => {
-    const supabase = await createClient();
+    const supabase = getSupabaseClient();
 
     const { data, error } = await supabase
       .from('properties')
@@ -122,7 +145,7 @@ export const getHotProperties = unstable_cache(
  */
 export const getNewProperties = unstable_cache(
   async (): Promise<Property[]> => {
-    const supabase = await createClient();
+    const supabase = getSupabaseClient();
 
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -153,7 +176,7 @@ export const getNewProperties = unstable_cache(
  */
 export const getMostLikedProperties = unstable_cache(
   async (): Promise<Property[]> => {
-    const supabase = await createClient();
+    const supabase = getSupabaseClient();
 
     const { data, error } = await supabase
       .from('properties')
@@ -182,7 +205,7 @@ export const getMostLikedProperties = unstable_cache(
 export function searchPropertiesByPrice(minPrice: number, maxPrice: number) {
   return unstable_cache(
     async (): Promise<Property[]> => {
-      const supabase = await createClient();
+      const supabase = getSupabaseClient();
 
       const { data, error } = await supabase
         .from('properties')
