@@ -403,31 +403,84 @@ def print_summary(properties: List[Dict]):
 def print_sample(properties: List[Dict], n: int = 2):
     """Print sample properties with translations."""
     print(f"\n📝 Sample Properties (first {n}):\n")
-    
+
     for i, p in enumerate(properties[:n]):
         print(f"{'='*60}")
         print(f"🏠 {p.get('id')} - {p.get('title', 'No title')[:50]}...")
         print(f"   Price: €{p.get('price', 0):,}")
         print(f"   Location: {p.get('municipality')}, {p.get('area_display') or p.get('area')}")
-        
+
         if p.get('title_es'):
             print(f"\n   🇪🇸 Title ES: {p.get('title_es')[:60]}...")
         if p.get('title_ru'):
             print(f"   🇷🇺 Title RU: {p.get('title_ru')[:60]}...")
-        
+
         desc = p.get('description', '')[:100]
         if desc:
             print(f"\n   📄 Description EN: {desc}...")
-        
+
         desc_es = (p.get('description_es') or '')[:100]
-        if desc_es: 
+        if desc_es:
             print(f"   🇪🇸 Description ES: {desc_es}...")
-        
+
         desc_ru = (p.get('description_ru') or '')[:100]
         if desc_ru:
             print(f"   🇷🇺 Description RU: {desc_ru}...")
-        
+
         print()
+
+
+def clear_vercel_cache():
+    """
+    Clear Vercel cache after uploading new properties.
+    Calls the revalidation API endpoint to invalidate cached data.
+    """
+    if not REVALIDATE_SECRET:
+        print("\n⚠️  REVALIDATE_SECRET not set - skipping cache clear")
+        print("   Add REVALIDATE_SECRET to .env.local to enable automatic cache clearing")
+        return
+
+    # Determine the API URL based on environment
+    deployment_url = os.getenv('NEXT_PUBLIC_DEPLOYMENT_URL') or os.getenv('VERCEL_URL')
+
+    if deployment_url:
+        api_url = f"https://{deployment_url}/api/revalidate"
+    else:
+        # Default to production URL
+        api_url = "https://javea-real-estate.vercel.app/api/revalidate"
+
+    print(f"\n🔄 Clearing Vercel cache...")
+    print(f"   API URL: {api_url}")
+
+    try:
+        response = requests.post(
+            api_url,
+            headers={
+                "Content-Type": "application/json",
+                "x-revalidate-secret": REVALIDATE_SECRET
+            },
+            json={"clearAll": True},
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✅ Cache cleared successfully!")
+            print(f"   Message: {data.get('message', 'Cache revalidated')}")
+            if data.get('revalidated'):
+                print(f"   Cleared: {', '.join(data['revalidated'])}")
+        elif response.status_code == 401:
+            print(f"❌ Unauthorized - check REVALIDATE_SECRET matches Vercel env var")
+        else:
+            print(f"⚠️  Cache clear failed: {response.status_code}")
+            print(f"   Response: {response.text}")
+
+    except requests.exceptions.Timeout:
+        print(f"⚠️  Cache clear timed out (API may be slow)")
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️  Cache clear error: {e}")
+    except Exception as e:
+        print(f"⚠️  Unexpected error clearing cache: {e}")
 
 
 # ============================================================================
@@ -493,22 +546,15 @@ def main():
     if args.sample or args.translate:
         print_sample(properties)
     
-    Upload
+    # Upload
     result = upload_properties(properties, dry_run=not args.upload)
-    
+
     if not args.upload:
         print("\n💡 To actually upload, run with --upload flag")
         print("💡 To translate first, run with --translate flag")
-    else:
-        url = "https://javea-real-estate.vercel.app/api/revalidate/"
-        headers = {
-            "x-revalidate-secret": REVALIDATE_SECRET
-        }
-
-        res = requests.post(url, headers=headers, timeout=10)
-
-        print(res.status_code, res.text)
-        if res.status_code == 200: print("Told supabase to drop the cache yo.")
+    elif result['success'] > 0:
+        # Clear Vercel cache after successful upload
+        clear_vercel_cache()
 
 
 if __name__ == '__main__':

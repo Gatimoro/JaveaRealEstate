@@ -558,6 +558,10 @@ def upload_to_supabase(properties: List[Dict]) -> None:
     print(f"  ✅ Success: {success_count}")
     print(f"  ❌ Errors: {error_count}")
 
+    # Clear Vercel cache after successful upload
+    if success_count > 0:
+        clear_vercel_cache()
+
 # ============================================================================
 # SYNC FUNCTIONS
 # ============================================================================
