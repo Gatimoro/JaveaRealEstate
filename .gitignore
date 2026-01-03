@@ -2,3 +2,5 @@ node_modules/
 .next/
 .env
 .env.local
+scraped_properties.json
+scraped_properties-translated.json
