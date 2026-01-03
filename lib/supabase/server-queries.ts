@@ -194,18 +194,30 @@ export async function searchPropertiesByPrice(
   maxPrice: number
 ): Promise<Property[]> {
   try {
-    const data = await supabaseFetch<Property>(
-      'properties',
-      {
-        status: 'eq.available',
-        price: `gte.${minPrice}`,
-        price: `lte.${maxPrice}`,
-        order: 'price.asc',
-        select: '*',
-      },
-      ['properties-search']
-    );
+    // Build URL manually for multiple price filters
+    const url = new URL(`${SUPABASE_URL}/rest/v1/properties`);
+    url.searchParams.append('status', 'eq.available');
+    url.searchParams.append('price', `gte.${minPrice}`);
+    url.searchParams.append('price', `lte.${maxPrice}`);
+    url.searchParams.append('order', 'price.asc');
+    url.searchParams.append('select', '*');
 
+    const response = await fetch(url.toString(), {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      next: {
+        revalidate: CACHE_TIME,
+        tags: ['properties', 'properties-search'],
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase fetch failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
     return data || [];
   } catch (error) {
     console.error('Error searching properties by price:', error);
