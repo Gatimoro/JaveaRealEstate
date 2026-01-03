@@ -500,7 +500,7 @@ def main():
         print("\n💡 To actually upload, run with --upload flag")
         print("💡 To translate first, run with --translate flag")
     else:
-        url = "https://javea-real-estate.vercel.app/api/revalidate"
+        url = "https://javea-real-estate.vercel.app/api/revalidate/"
         headers = {
             "x-revalidate-secret": REVALIDATE_SECRET
         }
