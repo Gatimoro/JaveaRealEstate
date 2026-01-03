@@ -2,5 +2,11 @@ node_modules/
 .next/
 .env
 .env.local
-scraped_properties.json
-scraped_properties-translated.json
+
+# Scraped data files (generated, not source code)
+scraped-properties.json
+scraped-properties-translated.json
+processed-properties.json
+unique-properties.json
+scripts/scraped-properties.json
+**/scraped-*.json
