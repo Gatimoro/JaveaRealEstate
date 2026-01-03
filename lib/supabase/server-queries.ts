@@ -1,8 +1,8 @@
 /**
- * Server-Side Supabase Property Queries with Cache Configuration
+ * Server-Side Supabase Property Queries - NO CACHING
  *
- * Uses Next.js fetch() with native caching - simpler and more stable than unstable_cache.
- * Data is cached and can be revalidated via tags.
+ * Fetches fresh data from Supabase on every request.
+ * Simple, reliable, and always up-to-date.
  */
 
 import type { Property } from '@/data/properties';
@@ -10,20 +10,15 @@ import type { Property } from '@/data/properties';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Cache for 24 hours
-const CACHE_TIME = 86400;
-
 /**
- * Fetch from Supabase REST API with Next.js caching
+ * Fetch from Supabase REST API - NO CACHING
  */
 async function supabaseFetch<T>(
   table: string,
-  params: Record<string, string> = {},
-  tags: string[] = []
+  params: Record<string, string> = {}
 ): Promise<T[]> {
   const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
 
-  // Add query parameters
   Object.entries(params).forEach(([key, value]) => {
     url.searchParams.append(key, value);
   });
@@ -33,10 +28,7 @@ async function supabaseFetch<T>(
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-    next: {
-      revalidate: CACHE_TIME,
-      tags: ['properties', ...tags],
-    },
+    cache: 'no-store', // ALWAYS fetch fresh data
   });
 
   if (!response.ok) {
@@ -47,20 +39,15 @@ async function supabaseFetch<T>(
 }
 
 /**
- * Get all available properties from Supabase (Server-Side with Cache)
+ * Get all available properties - ALWAYS FRESH
  */
 export async function getProperties(): Promise<Property[]> {
   try {
-    const data = await supabaseFetch<Property>(
-      'properties',
-      {
-        status: 'eq.available',
-        order: 'created_at.desc',
-        select: '*',
-      },
-      ['properties-all']
-    );
-
+    const data = await supabaseFetch<Property>('properties', {
+      status: 'eq.available',
+      order: 'created_at.desc',
+      select: '*',
+    });
     return data || [];
   } catch (error) {
     console.error('Error fetching properties:', error);
@@ -69,19 +56,14 @@ export async function getProperties(): Promise<Property[]> {
 }
 
 /**
- * Get a single property by ID (Server-Side)
+ * Get a single property by ID - ALWAYS FRESH
  */
 export async function getPropertyById(id: string): Promise<Property | null> {
   try {
-    const data = await supabaseFetch<Property>(
-      'properties',
-      {
-        id: `eq.${id}`,
-        select: '*',
-      },
-      [`property-${id}`]
-    );
-
+    const data = await supabaseFetch<Property>('properties', {
+      id: `eq.${id}`,
+      select: '*',
+    });
     return data[0] || null;
   } catch (error) {
     console.error('Error fetching property:', error);
@@ -90,23 +72,18 @@ export async function getPropertyById(id: string): Promise<Property | null> {
 }
 
 /**
- * Get properties by type (Server-Side with Cache)
+ * Get properties by type - ALWAYS FRESH
  */
 export async function getPropertiesByType(
   type: 'house' | 'apartment' | 'investment' | 'plot'
 ): Promise<Property[]> {
   try {
-    const data = await supabaseFetch<Property>(
-      'properties',
-      {
-        type: `eq.${type}`,
-        status: 'eq.available',
-        order: 'created_at.desc',
-        select: '*',
-      },
-      [`properties-type-${type}`]
-    );
-
+    const data = await supabaseFetch<Property>('properties', {
+      type: `eq.${type}`,
+      status: 'eq.available',
+      order: 'created_at.desc',
+      select: '*',
+    });
     return data || [];
   } catch (error) {
     console.error('Error fetching properties by type:', error);
@@ -115,21 +92,16 @@ export async function getPropertiesByType(
 }
 
 /**
- * Get hot properties (top 10 most viewed) (Server-Side with Cache)
+ * Get hot properties (top 10 most viewed) - ALWAYS FRESH
  */
 export async function getHotProperties(): Promise<Property[]> {
   try {
-    const data = await supabaseFetch<Property>(
-      'properties',
-      {
-        status: 'eq.available',
-        order: 'views_count.desc',
-        limit: '10',
-        select: '*',
-      },
-      ['properties-hot']
-    );
-
+    const data = await supabaseFetch<Property>('properties', {
+      status: 'eq.available',
+      order: 'views_count.desc',
+      limit: '10',
+      select: '*',
+    });
     return data || [];
   } catch (error) {
     console.error('Error fetching hot properties:', error);
@@ -138,24 +110,19 @@ export async function getHotProperties(): Promise<Property[]> {
 }
 
 /**
- * Get new properties (less than 2 weeks old) (Server-Side with Cache)
+ * Get new properties (less than 2 weeks old) - ALWAYS FRESH
  */
 export async function getNewProperties(): Promise<Property[]> {
   try {
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-    const data = await supabaseFetch<Property>(
-      'properties',
-      {
-        status: 'eq.available',
-        created_at: `gt.${twoWeeksAgo.toISOString()}`,
-        order: 'created_at.desc',
-        select: '*',
-      },
-      ['properties-new']
-    );
-
+    const data = await supabaseFetch<Property>('properties', {
+      status: 'eq.available',
+      created_at: `gt.${twoWeeksAgo.toISOString()}`,
+      order: 'created_at.desc',
+      select: '*',
+    });
     return data || [];
   } catch (error) {
     console.error('Error fetching new properties:', error);
@@ -164,21 +131,16 @@ export async function getNewProperties(): Promise<Property[]> {
 }
 
 /**
- * Get most liked properties (top 10 most saved) (Server-Side with Cache)
+ * Get most liked properties (top 10 most saved) - ALWAYS FRESH
  */
 export async function getMostLikedProperties(): Promise<Property[]> {
   try {
-    const data = await supabaseFetch<Property>(
-      'properties',
-      {
-        status: 'eq.available',
-        order: 'saves_count.desc',
-        limit: '10',
-        select: '*',
-      },
-      ['properties-most-liked']
-    );
-
+    const data = await supabaseFetch<Property>('properties', {
+      status: 'eq.available',
+      order: 'saves_count.desc',
+      limit: '10',
+      select: '*',
+    });
     return data || [];
   } catch (error) {
     console.error('Error fetching most liked properties:', error);
@@ -187,14 +149,13 @@ export async function getMostLikedProperties(): Promise<Property[]> {
 }
 
 /**
- * Search properties by price range (Server-Side with Cache)
+ * Search properties by price range - ALWAYS FRESH
  */
 export async function searchPropertiesByPrice(
   minPrice: number,
   maxPrice: number
 ): Promise<Property[]> {
   try {
-    // Build URL manually for multiple price filters
     const url = new URL(`${SUPABASE_URL}/rest/v1/properties`);
     url.searchParams.append('status', 'eq.available');
     url.searchParams.append('price', `gte.${minPrice}`);
@@ -207,10 +168,7 @@ export async function searchPropertiesByPrice(
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      next: {
-        revalidate: CACHE_TIME,
-        tags: ['properties', 'properties-search'],
-      },
+      cache: 'no-store', // ALWAYS fresh
     });
 
     if (!response.ok) {
@@ -226,20 +184,18 @@ export async function searchPropertiesByPrice(
 }
 
 /**
- * Get property badges (hot, new, most-liked) (Server-Side with Cache)
+ * Get property badges (hot, new, most-liked) - ALWAYS FRESH
  */
 export async function getPropertyBadges(): Promise<Record<string, string>> {
   const badges: Record<string, string> = {};
 
   try {
-    // Get all three categories in parallel
     const [hotProps, newProps, likedProps] = await Promise.all([
       getHotProperties(),
       getNewProperties(),
       getMostLikedProperties(),
     ]);
 
-    // Priority: hot > new > most-liked
     hotProps.forEach(p => {
       badges[p.id] = 'hot';
     });
