@@ -10,11 +10,12 @@ import HomeContent from '@/components/HomeContent';
 import { getPropertiesByType, getPropertyBadges } from '@/lib/supabase/server-queries';
 import type { Property } from '@/data/properties';
 
+// Force dynamic rendering - ALWAYS fetch fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
- * Home Page - Server Component
- *
- * Fetches data on the server with 24-hour caching.
- * Data is passed to client components for interactivity.
+ * Home Page - Server Component - ALWAYS FRESH DATA
  */
 export default async function Home() {
   // Fetch all data on the server (cached for 24 hours!)
