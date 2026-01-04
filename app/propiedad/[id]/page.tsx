@@ -46,7 +46,7 @@ export default function PropertyDetailPage() {
     loadProperty();
   }, [id]);
 
-  // Fetch all properties for "similar properties" feature
+  // Fetch all properties for recommendations
   useEffect(() => {
     async function loadAllProperties() {
       try {
@@ -85,9 +85,14 @@ export default function PropertyDetailPage() {
       buildable: '✓ Edificable',
       notBuildable: '✗ No edificable',
       similarProperties: 'Propiedades similares cerca',
+      biggerProperties: 'Propiedades más amplias',
+      cheaperProperties: 'Alternativas más económicas',
+      otherInvestments: 'Otras oportunidades de inversión',
       lessThan: 'a menos de',
       meters: 'metros',
       at: 'a',
+      bigger: 'más grande',
+      cheaper: 'más económico',
     },
     en: {
       notFound: 'Property not found',
@@ -111,9 +116,14 @@ export default function PropertyDetailPage() {
       buildable: '✓ Buildable',
       notBuildable: '✗ Not buildable',
       similarProperties: 'Similar properties nearby',
+      biggerProperties: 'Larger properties',
+      cheaperProperties: 'More affordable options',
+      otherInvestments: 'Other investment opportunities',
       lessThan: 'less than',
       meters: 'meters',
       at: 'at',
+      bigger: 'larger',
+      cheaper: 'more affordable',
     },
     ru: {
       notFound: 'Объект не найден',
@@ -137,9 +147,14 @@ export default function PropertyDetailPage() {
       buildable: '✓ Возможна застройка',
       notBuildable: '✗ Застройка невозможна',
       similarProperties: 'Похожие объекты рядом',
+      biggerProperties: 'Более просторные объекты',
+      cheaperProperties: 'Более доступные варианты',
+      otherInvestments: 'Другие инвестиционные возможности',
       lessThan: 'менее',
       meters: 'метров',
       at: 'на расстоянии',
+      bigger: 'больше',
+      cheaper: 'дешевле',
     },
   };
 
@@ -210,77 +225,191 @@ export default function PropertyDetailPage() {
     return R * c; // Distance in km
   };
 
-  // Get similar properties based on property type
-  const getSimilarProperties = () => {
-    if (!property.coordinates) return [];
+  // Helper: Normalize type (treat house and apartment as the same)
+  const normalizeType = (type: string) => {
+    if (type === 'house' || type === 'apartment') return 'house';
+    return type;
+  };
+
+  // 1. Similar nearby properties (same type, nearby location or same neighborhood)
+  const getSimilarNearbyProperties = () => {
+    const currentType = normalizeType(property.type);
 
     const filtered = allProperties.filter((p) => {
       if (p.id === property.id) return false;
-      if (p.type !== property.type) return false;
+      // Match normalized type
+      if (normalizeType(p.type) !== currentType) return false;
       return true;
     });
 
-    // For investments: prioritize similar price
-    if (property.type === 'investment') {
-      return filtered
-        .map((p) => ({
-          ...p,
-          priceDiff: Math.abs(p.price - property.price),
-          distance: p.coordinates ? calculateDistance(
-            property.coordinates!.lat,
-            property.coordinates!.lng,
-            p.coordinates.lat,
-            p.coordinates.lng
-          ) : undefined,
-        }))
-        .sort((a, b) => a.priceDiff - b.priceDiff)
-        .slice(0, 3);
-    }
-
-    // For plots: similar price OR location
-    if (property.type === 'plot') {
+    // If we have coordinates, sort by distance
+    if (property.coordinates) {
       return filtered
         .filter((p) => p.coordinates !== undefined)
-        .map((p) => {
-          const distance = calculateDistance(
+        .map((p) => ({
+          ...p,
+          distance: calculateDistance(
             property.coordinates!.lat,
             property.coordinates!.lng,
             p.coordinates!.lat,
             p.coordinates!.lng
-          );
-          const priceDiff = Math.abs(p.price - property.price);
-          // Score: combine price similarity and distance (lower is better)
-          const score = (priceDiff / property.price) * 50 + distance;
-          return { ...p, distance, score };
-        })
-        .sort((a, b) => a.score - b.score)
-        .slice(0, 3);
+          ),
+        }))
+        .filter((p) => p.distance <= 10) // Within 10km
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 4);
     }
 
-    // For houses: closest first (distance-based)
+    // Fallback: same municipality/area from location string
+    const currentLocation = property.location?.toLowerCase() || '';
     return filtered
-      .filter((p) => p.coordinates !== undefined)
-      .map((p) => ({
-        ...p,
-        distance: calculateDistance(
-          property.coordinates!.lat,
-          property.coordinates!.lng,
-          p.coordinates!.lat,
-          p.coordinates!.lng
-        ),
-      }))
-      .filter((p) => p.distance <= 5) // Within 5km
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 3);
+      .map((p) => {
+        const pLocation = p.location?.toLowerCase() || '';
+        // Simple matching: check if locations share common words
+        const currentWords = currentLocation.split(/[,\s]+/);
+        const pWords = pLocation.split(/[,\s]+/);
+        const matchCount = currentWords.filter(w => pWords.includes(w)).length;
+        return { ...p, matchScore: matchCount };
+      })
+      .filter((p) => p.matchScore > 0)
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 4);
   };
 
-  const similarProperties = getSimilarProperties();
+  // 2. Bigger properties (more square meters) - NOT for investments
+  const getBiggerProperties = () => {
+    if (property.type === 'investment') return [];
+
+    const currentSize = property.specs.size || 0;
+    const currentType = normalizeType(property.type);
+
+    return allProperties
+      .filter((p) => {
+        if (p.id === property.id) return false;
+        if (normalizeType(p.type) !== currentType) return false;
+        const pSize = p.specs.size || 0;
+        return pSize > currentSize;
+      })
+      .sort((a, b) => {
+        const aSize = a.specs.size || 0;
+        const bSize = b.specs.size || 0;
+        // Sort by closest bigger size
+        return Math.abs(aSize - currentSize) - Math.abs(bSize - currentSize);
+      })
+      .slice(0, 4);
+  };
+
+  // 3. Cheaper properties (next cheapest, semi-random selection)
+  const getCheaperProperties = () => {
+    const currentPrice = property.price;
+    const currentType = normalizeType(property.type);
+
+    // Get all cheaper properties of same type
+    const cheaper = allProperties
+      .filter((p) => {
+        if (p.id === property.id) return false;
+        if (normalizeType(p.type) !== currentType) return false;
+        return p.price < currentPrice;
+      })
+      .sort((a, b) => b.price - a.price); // Sort descending (closest cheaper first)
+
+    // Semi-random selection: take top 8 closest cheaper, then randomly pick 4
+    const candidates = cheaper.slice(0, 8);
+    if (candidates.length <= 4) return candidates;
+
+    // Shuffle and take 4
+    const shuffled = candidates.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 4);
+  };
+
+  // 4. Other investment opportunities (for investments only)
+  const getOtherInvestments = () => {
+    if (property.type !== 'investment') return [];
+
+    return allProperties
+      .filter((p) => {
+        if (p.id === property.id) return false;
+        return p.type === 'investment';
+      })
+      .map((p) => ({
+        ...p,
+        priceDiff: Math.abs(p.price - property.price),
+      }))
+      .sort((a, b) => a.priceDiff - b.priceDiff)
+      .slice(0, 4);
+  };
+
+  const similarProperties = getSimilarNearbyProperties();
+  const biggerProperties = getBiggerProperties();
+  const cheaperProperties = getCheaperProperties();
+  const otherInvestments = getOtherInvestments();
 
   const formatDistance = (distanceKm: number) => {
     if (distanceKm < 1) {
       return `${t.lessThan} ${Math.round(distanceKm * 1000)} ${t.meters}`;
     }
     return `${t.at} ${distanceKm.toFixed(1)} km`;
+  };
+
+  // Property card component for carousels
+  const PropertyCarouselCard = ({ prop, badge }: { prop: Property & { distance?: number }, badge?: string }) => {
+    const cardTitle = getPropertyTitle(prop, locale);
+    return (
+      <Link
+        key={prop.id}
+        href={`/propiedad/${prop.id}`}
+        className="group w-full max-w-md md:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
+      >
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={prop.images[0]}
+            alt={cardTitle}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+          {(prop.badge || badge) && (
+            <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
+              {badge || prop.badge}
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          {prop.distance !== undefined && (
+            <div className="flex items-center text-sm text-primary mb-2">
+              <MapPin className="w-4 h-4 mr-1" />
+              <span>{formatDistance(prop.distance)}</span>
+            </div>
+          )}
+          <h3 className="font-bold text-lg mb-2 line-clamp-1">{cardTitle}</h3>
+          <p className="text-muted text-sm mb-3 flex items-center">
+            <MapPin className="w-4 h-4 mr-1" />
+            {prop.location}
+          </p>
+          <div className="flex items-center justify-between">
+            <span className="text-xl font-bold gradient-text">
+              {formatPrice(prop.price)}
+            </span>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted mt-3 pt-3 border-t border-border">
+            {prop.specs.bedrooms && (
+              <div className="flex items-center gap-1">
+                <Bed className="w-4 h-4" />
+                <span>{prop.specs.bedrooms}</span>
+              </div>
+            )}
+            {prop.specs.bathrooms && (
+              <div className="flex items-center gap-1">
+                <Bath className="w-4 h-4" />
+                <span>{prop.specs.bathrooms}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Maximize className="w-4 h-4" />
+              <span>{prop.specs.size}m²</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
   };
 
   return (
@@ -409,7 +538,7 @@ export default function PropertyDetailPage() {
             {description && (
               <div>
                 <h2 className="text-2xl font-bold mb-3">{t.description}</h2>
-                <p className="text-muted leading-relaxed text-lg">{description}</p>
+                <p className="text-muted leading-relaxed text-lg whitespace-pre-wrap">{description}</p>
               </div>
             )}
 
@@ -494,73 +623,56 @@ export default function PropertyDetailPage() {
           </div>
         </div>
 
-        {/* Similar Properties */}
-        {similarProperties.length > 0 && (
-          <div className="mt-16 pt-8 border-t border-border">
-            <h2 className="text-3xl font-bold mb-6">{t.similarProperties}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full justify-items-center md:justify-items-stretch">
-              {similarProperties.map((similar) => {
-                const similarTitle = getPropertyTitle(similar, locale);
-                return (
-                  <Link
-                    key={similar.id}
-                    href={`/propiedad/${similar.id}`}
-                    className="group w-full max-w-md md:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
-                  >
-                    <div className="relative h-48 overflow-hidden">
-                      <img
-                        src={similar.images[0]}
-                        alt={similarTitle}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    {similar.badge && (
-                      <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
-                        {similar.badge}
-                      </div>
-                    )}
-                  </div>
-                    <div className="p-4">
-                      {similar.distance !== undefined && (
-                        <div className="flex items-center text-sm text-primary mb-2">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          <span>{formatDistance(similar.distance)}</span>
-                        </div>
-                      )}
-                      <h3 className="font-bold text-lg mb-2 line-clamp-1">{similarTitle}</h3>
-                      <p className="text-muted text-sm mb-3 flex items-center">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {similar.location}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold gradient-text">
-                          {formatPrice(similar.price)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted mt-3 pt-3 border-t border-border">
-                        {similar.specs.bedrooms && (
-                          <div className="flex items-center gap-1">
-                            <Bed className="w-4 h-4" />
-                            <span>{similar.specs.bedrooms}</span>
-                          </div>
-                        )}
-                        {similar.specs.bathrooms && (
-                          <div className="flex items-center gap-1">
-                            <Bath className="w-4 h-4" />
-                            <span>{similar.specs.bathrooms}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <Maximize className="w-4 h-4" />
-                          <span>{similar.specs.size}m²</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+        {/* Recommendation Carousels */}
+        <div className="space-y-16 mt-16">
+          {/* Similar Nearby Properties */}
+          {similarProperties.length > 0 && (
+            <div className="pt-8 border-t border-border">
+              <h2 className="text-3xl font-bold mb-6">{t.similarProperties}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {similarProperties.map((similar) => (
+                  <PropertyCarouselCard key={similar.id} prop={similar} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Bigger Properties (NOT for investments) */}
+          {biggerProperties.length > 0 && property.type !== 'investment' && (
+            <div className="pt-8 border-t border-border">
+              <h2 className="text-3xl font-bold mb-6">{t.biggerProperties}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {biggerProperties.map((bigger) => (
+                  <PropertyCarouselCard key={bigger.id} prop={bigger} badge={t.bigger} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cheaper Properties */}
+          {cheaperProperties.length > 0 && (
+            <div className="pt-8 border-t border-border">
+              <h2 className="text-3xl font-bold mb-6">{t.cheaperProperties}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {cheaperProperties.map((cheaper) => (
+                  <PropertyCarouselCard key={cheaper.id} prop={cheaper} badge={t.cheaper} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Other Investment Opportunities (for investments only) */}
+          {otherInvestments.length > 0 && property.type === 'investment' && (
+            <div className="pt-8 border-t border-border">
+              <h2 className="text-3xl font-bold mb-6">{t.otherInvestments}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {otherInvestments.map((investment) => (
+                  <PropertyCarouselCard key={investment.id} prop={investment} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
