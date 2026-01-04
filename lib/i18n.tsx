@@ -347,16 +347,27 @@ export const languageFlags: Record<Locale, string> = {
 
 // Get property title with intelligent fallback
 export function getPropertyTitle(
-  property: { title: string; titleEn?: string; titleRu?: string; type?: 'house' | 'apartment' | 'investment' | 'plot' },
+  property: {
+    title: string;
+    titleEn?: string;
+    titleEs?: string;
+    titleRu?: string;
+    title_en?: string;
+    title_es?: string;
+    title_ru?: string;
+    type?: 'house' | 'apartment' | 'investment' | 'plot'
+  },
   locale: Locale
 ): string {
   // Try to get translated title
   const translatedTitle = getLocalizedField(property, 'title', locale);
-  if (translatedTitle && translatedTitle !== property.title) {
+
+  // If we found a translated title, use it (even if it's the same as the original)
+  if (translatedTitle) {
     return translatedTitle;
   }
 
-  // If no translation and locale is not Spanish, generate generic fallback
+  // If no translation found and locale is not Spanish, generate generic fallback
   if (locale !== 'es' && property.type) {
     const fallbacks = {
       en: {
@@ -379,6 +390,6 @@ export function getPropertyTitle(
     }
   }
 
-  // Fallback to Spanish title
+  // Final fallback to base title
   return property.title;
 }
