@@ -81,7 +81,14 @@ export const translations = {
     // Property details
     bedrooms: 'habitaciones',
     bathrooms: 'baños',
+    bedroomsShort: 'hab',
+    bathroomsShort: 'baños',
     size: 'm²',
+    sizeLabel: 'Tamaño:',
+    buildable: 'Edificable:',
+    zone: 'Zona:',
+    yes: 'Sí',
+    no: 'No',
     price: 'Precio',
     location: 'Ubicación',
     description: 'Descripción',
@@ -135,7 +142,14 @@ export const translations = {
     // Property details
     bedrooms: 'bedrooms',
     bathrooms: 'bathrooms',
+    bedroomsShort: 'beds',
+    bathroomsShort: 'baths',
     size: 'm²',
+    sizeLabel: 'Size:',
+    buildable: 'Buildable:',
+    zone: 'Zone:',
+    yes: 'Yes',
+    no: 'No',
     price: 'Price',
     location: 'Location',
     description: 'Description',
@@ -189,7 +203,14 @@ export const translations = {
     // Property details
     bedrooms: 'спален',
     bathrooms: 'ванных',
+    bedroomsShort: 'спален',
+    bathroomsShort: 'ванных',
     size: 'м²',
+    sizeLabel: 'Размер:',
+    buildable: 'Застройка:',
+    zone: 'Зона:',
+    yes: 'Да',
+    no: 'Нет',
     price: 'Цена',
     location: 'Расположение',
     description: 'Описание',
@@ -392,4 +413,20 @@ export function getPropertyTitle(
 
   // Final fallback to base title
   return property.title;
+}
+
+/**
+ * Format price with proper currency and locale
+ * Centralized utility to avoid duplication across components
+ */
+export function formatPrice(price: number, locale: Locale): string {
+  return new Intl.NumberFormat(
+    locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES',
+    {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }
+  ).format(price);
 }

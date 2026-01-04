@@ -3,7 +3,7 @@
 import { Maximize, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
-import { useLanguage, getPropertyTitle } from '@/lib/i18n';
+import { useLanguage, getPropertyTitle, formatPrice, translations } from '@/lib/i18n';
 import SavePropertyButton from './SavePropertyButton';
 
 interface PlotCardProps {
@@ -12,24 +12,7 @@ interface PlotCardProps {
 
 export default function PlotCard({ property }: PlotCardProps) {
   const { locale } = useLanguage();
-
-  const translations = {
-    es: { size: 'Tamaño:', buildable: 'Edificable:', zone: 'Zona:', yes: 'Sí', no: 'No' },
-    en: { size: 'Size:', buildable: 'Buildable:', zone: 'Zone:', yes: 'Yes', no: 'No' },
-    ru: { size: 'Размер:', buildable: 'Застройка:', zone: 'Зона:', yes: 'Да', no: 'Нет' },
-  };
-
   const t = translations[locale];
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
   const title = getPropertyTitle(property, locale);
 
   return (
@@ -55,7 +38,7 @@ export default function PlotCard({ property }: PlotCardProps) {
       <div className="p-5 space-y-3">
         {/* Price */}
         <div className="text-2xl font-bold gradient-text">
-          {formatPrice(property.price)}
+          {formatPrice(property.price, locale)}
         </div>
 
         {/* Title */}
@@ -72,7 +55,7 @@ export default function PlotCard({ property }: PlotCardProps) {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted flex items-center gap-1">
               <Maximize className="w-4 h-4" />
-              {t.size}
+              {t.sizeLabel}
             </span>
             <span className="font-semibold">{property.specs.size}m²</span>
           </div>

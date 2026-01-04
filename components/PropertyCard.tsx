@@ -3,7 +3,7 @@
 import { Bed, Bath, Maximize, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
-import { useLanguage, getPropertyTitle } from '@/lib/i18n';
+import { useLanguage, getPropertyTitle, formatPrice, translations } from '@/lib/i18n';
 import SavePropertyButton from './SavePropertyButton';
 
 interface PropertyCardProps {
@@ -12,24 +12,7 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ property }: PropertyCardProps) {
   const { locale } = useLanguage();
-
-  const translations = {
-    es: { bedrooms: 'hab', bathrooms: 'baños' },
-    en: { bedrooms: 'beds', bathrooms: 'baths' },
-    ru: { bedrooms: 'спален', bathrooms: 'ванных' },
-  };
-
   const t = translations[locale];
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
   const title = getPropertyTitle(property, locale);
 
   return (
@@ -55,7 +38,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       <div className="p-5 space-y-3">
         {/* Price */}
         <div className="text-2xl font-bold gradient-text">
-          {formatPrice(property.price)}
+          {formatPrice(property.price, locale)}
         </div>
 
         {/* Title */}
@@ -72,13 +55,13 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           {property.specs.bedrooms && (
             <div className="flex items-center gap-1">
               <Bed className="w-4 h-4" />
-              <span>{property.specs.bedrooms} {t.bedrooms}</span>
+              <span>{property.specs.bedrooms} {t.bedroomsShort}</span>
             </div>
           )}
           {property.specs.bathrooms && (
             <div className="flex items-center gap-1">
               <Bath className="w-4 h-4" />
-              <span>{property.specs.bathrooms} {t.bathrooms}</span>
+              <span>{property.specs.bathrooms} {t.bathroomsShort}</span>
             </div>
           )}
           <div className="flex items-center gap-1">
