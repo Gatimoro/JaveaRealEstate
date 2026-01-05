@@ -184,31 +184,179 @@ export async function searchPropertiesByPrice(
 }
 
 /**
- * Get property badges (hot, new, most-liked) - ALWAYS FRESH
+ * Get trending properties (most viewed in last 7 days) - ALWAYS FRESH
+ * Uses property_analytics_events table for time-windowed analytics
+ */
+export async function getTrendingProperties(): Promise<Property[]> {
+  try {
+    // Call the database function for trending properties
+    const url = new URL(`${SUPABASE_URL}/rest/v1/rpc/get_trending_properties`);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        days_back: 7,
+        limit_count: 10
+      }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      // Fallback to legacy hot properties if events table doesn't exist
+      return getHotProperties();
+    }
+
+    const data = await response.json();
+
+    // Map function results to property IDs
+    const propertyIds = data.map((d: any) => d.property_id);
+
+    // Fetch full property details
+    if (propertyIds.length === 0) return [];
+
+    const properties = await supabaseFetch<Property>('properties', {
+      id: `in.(${propertyIds.join(',')})`,
+      select: '*',
+    });
+
+    return properties || [];
+  } catch (error) {
+    console.error('Error fetching trending properties:', error);
+    // Fallback to legacy hot properties
+    return getHotProperties();
+  }
+}
+
+/**
+ * Get recently saved properties (most saved in last 7 days) - ALWAYS FRESH
+ * Uses property_analytics_events table for time-windowed analytics
+ */
+export async function getRecentlySavedProperties(): Promise<Property[]> {
+  try {
+    // Call the database function for recently saved properties
+    const url = new URL(`${SUPABASE_URL}/rest/v1/rpc/get_recently_saved_properties`);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        days_back: 7,
+        limit_count: 10
+      }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      // Fallback to legacy most liked if events table doesn't exist
+      return getMostLikedProperties();
+    }
+
+    const data = await response.json();
+
+    // Map function results to property IDs
+    const propertyIds = data.map((d: any) => d.property_id);
+
+    // Fetch full property details
+    if (propertyIds.length === 0) return [];
+
+    const properties = await supabaseFetch<Property>('properties', {
+      id: `in.(${propertyIds.join(',')})`,
+      select: '*',
+    });
+
+    return properties || [];
+  } catch (error) {
+    console.error('Error fetching recently saved properties:', error);
+    // Fallback to legacy most liked
+    return getMostLikedProperties();
+  }
+}
+
+/**
+ * Get recently updated properties (modified in last 3 days) - ALWAYS FRESH
+ */
+export async function getUpdatedProperties(): Promise<Property[]> {
+  try {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    const data = await supabaseFetch<Property>('properties', {
+      status: 'eq.available',
+      updated_at: `gt.${threeDaysAgo.toISOString()}`,
+      order: 'updated_at.desc',
+      select: '*',
+    });
+
+    // Filter out brand new properties (only show updated existing ones)
+    const oneDayAfterCreation = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+    const updatedOnly = data.filter(p => {
+      const created = new Date(p.created_at as string).getTime();
+      const updated = new Date(p.updated_at as string).getTime();
+      return (updated - created) > oneDayAfterCreation;
+    });
+
+    return updatedOnly || [];
+  } catch (error) {
+    console.error('Error fetching updated properties:', error);
+    return [];
+  }
+}
+
+/**
+ * Get property badges with enhanced time-based logic - ALWAYS FRESH
+ *
+ * Badge Priority (first match wins):
+ * 1. TRENDING - Top 10 by views in last 7 days (currently popular)
+ * 2. NEW - Listed < 14 days ago (fresh listings)
+ * 3. RECENTLY-SAVED - Top 10 by saves in last 7 days (currently desired)
+ * 4. UPDATED - Modified within last 3 days (recent changes)
+ * 5. STATIC - Fallback to database badge field
+ *
+ * This ensures one badge per property with preference for recent activity
  */
 export async function getPropertyBadges(): Promise<Record<string, string>> {
   const badges: Record<string, string> = {};
 
   try {
-    const [hotProps, newProps, likedProps] = await Promise.all([
-      getHotProperties(),
+    const [trendingProps, newProps, recentlySavedProps, updatedProps] = await Promise.all([
+      getTrendingProperties(),
       getNewProperties(),
-      getMostLikedProperties(),
+      getRecentlySavedProperties(),
+      getUpdatedProperties(),
     ]);
 
-    hotProps.forEach(p => {
-      badges[p.id] = 'hot';
+    // Priority 1: TRENDING (most important - shows what's hot NOW)
+    trendingProps.forEach(p => {
+      badges[p.id] = 'trending';
     });
 
+    // Priority 2: NEW (second - fresh listings)
     newProps.forEach(p => {
       if (!badges[p.id]) {
         badges[p.id] = 'new';
       }
     });
 
-    likedProps.forEach(p => {
+    // Priority 3: RECENTLY-SAVED (third - current user interest)
+    recentlySavedProps.forEach(p => {
       if (!badges[p.id]) {
-        badges[p.id] = 'most-liked';
+        badges[p.id] = 'recently-saved';
+      }
+    });
+
+    // Priority 4: UPDATED (fourth - recent changes)
+    updatedProps.forEach(p => {
+      if (!badges[p.id]) {
+        badges[p.id] = 'updated';
       }
     });
 
