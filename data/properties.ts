@@ -1,6 +1,8 @@
 export interface Property {
   id: string;
-  type: 'house' | 'apartment' | 'investment' | 'plot';
+  type: 'house' | 'apartment' | 'investment' | 'plot'; // DEPRECATED: Use listing_type and sub_category instead
+  listing_type?: 'sale' | 'rent' | 'new-building';
+  sub_category?: 'apartment' | 'house' | 'commerce' | 'plot';
   title: string;
   titleEn?: string;
   titleEs?: string;
@@ -30,6 +32,8 @@ export interface Property {
   features_es?: string[];
   features_ru?: string[];
   sourceUrl?: string;
+  source_url?: string; // Database field (snake_case)
+  source_reference?: string;
   priceHistory?: { date: string; price: number }[];
   coordinates?: { lat: number; lng: number };
   specs: {
@@ -41,6 +45,14 @@ export interface Property {
     zone?: string;
     buildable?: boolean;
   };
+  // Database metadata fields
+  status?: 'available' | 'reserved' | 'sold';
+  views_count?: number;
+  saves_count?: number;
+  clicks_count?: number;
+  created_at?: string;
+  updated_at?: string;
+  scraped_at?: string;
 }
 
 // Sample properties for "Casas y Pisos"

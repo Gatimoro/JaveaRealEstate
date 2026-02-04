@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { User as UserIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import Navbar from '@/components/Navbar';
+import CategoryNav from '@/components/CategoryNav';
 import Footer from '@/components/Footer';
 import PropertyCard from '@/components/PropertyCard';
 import InvestmentCard from '@/components/InvestmentCard';
@@ -137,7 +137,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <CategoryNav />
 
       <div className="container mx-auto px-4 py-24">
         {/* Profile Header */}

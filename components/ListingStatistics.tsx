@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Home, Building2, TrendingUp, MapPin, Euro, BarChart3, Clock } from 'lucide-react';
 import type { Property } from '@/data/properties';
 import { useLanguage } from '@/lib/i18n';
+import { formatPrice } from '@/lib/utils';
 
 interface ListingStatisticsProps {
   properties: Property[];
@@ -89,15 +90,6 @@ export default function ListingStatistics({ properties, timestamp = new Date() }
     };
   }, [properties]);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
       dateStyle: 'medium',
@@ -171,7 +163,7 @@ export default function ListingStatistics({ properties, timestamp = new Date() }
               <Euro className="w-6 h-6 text-green-500" />
             </div>
             <div className="text-3xl font-bold text-green-500 mb-1">
-              {formatPrice(Math.round(stats.totalValue / stats.total))}
+              {formatPrice(Math.round(stats.totalValue / stats.total), locale)}
             </div>
             <div className="text-muted text-sm">{t.avgPrice}</div>
           </div>
@@ -181,7 +173,7 @@ export default function ListingStatistics({ properties, timestamp = new Date() }
               <TrendingUp className="w-6 h-6 text-blue-500" />
             </div>
             <div className="text-2xl font-bold text-blue-500 mb-1">
-              {formatPrice(stats.totalValue)}
+              {formatPrice(stats.totalValue, locale)}
             </div>
             <div className="text-muted text-sm">{t.totalValue}</div>
           </div>
@@ -218,15 +210,15 @@ export default function ListingStatistics({ properties, timestamp = new Date() }
                   <div className="space-y-2 text-sm border-t border-border pt-4">
                     <div className="flex justify-between">
                       <span className="text-muted">{t.avgPrice}:</span>
-                      <span className="font-semibold">{formatPrice(stat.data.avg)}</span>
+                      <span className="font-semibold">{formatPrice(stat.data.avg, locale)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted">{t.minPrice}:</span>
-                      <span className="font-semibold text-green-500">{formatPrice(stat.data.min)}</span>
+                      <span className="font-semibold text-green-500">{formatPrice(stat.data.min, locale)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted">{t.maxPrice}:</span>
-                      <span className="font-semibold text-orange-500">{formatPrice(stat.data.max)}</span>
+                      <span className="font-semibold text-orange-500">{formatPrice(stat.data.max, locale)}</span>
                     </div>
                   </div>
                 )}

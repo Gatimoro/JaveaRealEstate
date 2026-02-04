@@ -8,6 +8,7 @@ import { getPropertyById, getProperties } from '@/lib/supabase/queries';
 import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
+import { formatPrice } from '@/lib/utils';
 
 export default function PropertyDetailPage() {
   const params = useParams();
@@ -190,15 +191,6 @@ export default function PropertyDetailPage() {
   const title = getPropertyTitle(property, locale);
   const description = getLocalizedField(property, 'description', locale) || property.description;
   const features = getLocalizedArray(property, 'features', locale);
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-GB' : 'es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
 
   const nextImage = () => {
     setSelectedImageIndex((prev) =>
@@ -386,7 +378,7 @@ export default function PropertyDetailPage() {
           </p>
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold gradient-text">
-              {formatPrice(prop.price)}
+              {formatPrice(prop.price, locale)}
             </span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted mt-3 pt-3 border-t border-border">
@@ -498,7 +490,7 @@ export default function PropertyDetailPage() {
                 <span>{property.location}</span>
               </div>
               <div className="text-4xl font-bold gradient-text">
-                {formatPrice(property.price)}
+                {formatPrice(property.price, locale)}
               </div>
             </div>
 
@@ -597,7 +589,7 @@ export default function PropertyDetailPage() {
                     <div className="flex justify-between">
                       <span>{t.estimatedIncome}</span>
                       <span className="font-semibold text-foreground">
-                        {formatPrice((property.price * property.specs.roi) / 100)}
+                        {formatPrice((property.price * property.specs.roi) / 100, locale)}
                       </span>
                     </div>
                   </div>

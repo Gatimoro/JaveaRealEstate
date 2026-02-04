@@ -1,3 +1,114 @@
+-- Migration: Add listing_type and sub_category fields for new category structure
+-- Date: 2026-01-28
+-- Purpose: Restructure properties to support New Buildings, Rent, and Sale categories
+
+-- 1. Add new columns
+ALTER TABLE properties
+ADD COLUMN IF NOT EXISTS listing_type TEXT,
+ADD COLUMN IF NOT EXISTS sub_category TEXT;
+
+-- 2. Create indexes for filtering
+CREATE INDEX IF NOT EXISTS idx_properties_listing_type ON properties(listing_type);
+CREATE INDEX IF NOT EXISTS idx_properties_sub_category ON properties(sub_category);
+CREATE INDEX IF NOT EXISTS idx_properties_category_combo ON properties(listing_type, sub_category);
+
+-- 3. Migrate existing data
+-- Current 'type' field has: 'house', 'investment', 'plot'
+-- Mapping:
+--   'house' -> listing_type='sale', sub_category='house'
+--   'investment' -> listing_type='sale', sub_category='apartment' (since most investments are apartments)
+--   'plot' -> listing_type='sale', sub_category='plot'
+
+UPDATE properties
+SET
+  listing_type = 'sale',
+  sub_category = CASE
+    WHEN type = 'house' THEN 'house'
+    WHEN type = 'investment' THEN 'apartment'
+    WHEN type = 'plot' THEN 'plot'
+    ELSE 'apartment' -- default
+  END
+WHERE listing_type IS NULL;
+
+-- 4. Add check constraints for valid values
+ALTER TABLE properties
+DROP CONSTRAINT IF EXISTS check_listing_type;
+
+ALTER TABLE properties
+ADD CONSTRAINT check_listing_type
+CHECK (listing_type IN ('sale', 'rent', 'new-building'));
+
+ALTER TABLE properties
+DROP CONSTRAINT IF EXISTS check_sub_category;
+
+ALTER TABLE properties
+ADD CONSTRAINT check_sub_category
+CHECK (sub_category IN ('apartment', 'house', 'commerce', 'plot'));
+
+-- 5. Update the properties table comment
+COMMENT ON COLUMN properties.listing_type IS 'Main category: sale, rent, or new-building';
+COMMENT ON COLUMN properties.sub_category IS 'Property type: apartment, house, commerce, or plot';
+COMMENT ON COLUMN properties.type IS 'DEPRECATED: Use listing_type and sub_category instead';
+
+-- 6. Create helper views for each category
+CREATE OR REPLACE VIEW properties_new_buildings AS
+SELECT * FROM properties
+WHERE listing_type = 'new-building' AND status = 'available'
+ORDER BY created_at DESC;
+
+CREATE OR REPLACE VIEW properties_for_rent AS
+SELECT * FROM properties
+WHERE listing_type = 'rent' AND status = 'available'
+ORDER BY created_at DESC;
+
+CREATE OR REPLACE VIEW properties_for_sale AS
+SELECT * FROM properties
+WHERE listing_type = 'sale' AND status = 'available'
+ORDER BY created_at DESC;
+
+-- 7. Create function to get properties by category
+CREATE OR REPLACE FUNCTION get_properties_by_category(
+  p_listing_type TEXT,
+  p_sub_category TEXT DEFAULT NULL,
+  p_limit INT DEFAULT 100,
+  p_offset INT DEFAULT 0
+) RETURNS SETOF properties AS $$
+BEGIN
+  IF p_sub_category IS NOT NULL THEN
+    RETURN QUERY
+    SELECT * FROM properties
+    WHERE listing_type = p_listing_type
+      AND sub_category = p_sub_category
+      AND status = 'available'
+    ORDER BY created_at DESC
+    LIMIT p_limit OFFSET p_offset;
+  ELSE
+    RETURN QUERY
+    SELECT * FROM properties
+    WHERE listing_type = p_listing_type
+      AND status = 'available'
+    ORDER BY created_at DESC
+    LIMIT p_limit OFFSET p_offset;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 8. Create function to get featured properties for homepage
+CREATE OR REPLACE FUNCTION get_featured_properties_by_category(
+  p_listing_type TEXT,
+  p_limit INT DEFAULT 6
+) RETURNS SETOF properties AS $$
+BEGIN
+  RETURN QUERY
+  SELECT * FROM properties
+  WHERE listing_type = p_listing_type
+    AND status = 'available'
+  ORDER BY
+    views_count DESC,
+    created_at DESC
+  LIMIT p_limit;
+END;
+$$ LANGUAGE plpgsql;
 -- Analytics and Tracking Setup for Properties
 -- Run this AFTER database-properties-setup.sql
 -- Supabase SQL Editor: https://app.supabase.com/project/cqoqbbdypebzawgmtazv/sql

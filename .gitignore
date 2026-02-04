@@ -10,3 +10,4 @@ processed-properties.json
 unique-properties.json
 scripts/scraped-properties.json
 **/scraped-*.json
+.vercel
