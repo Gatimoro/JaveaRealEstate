@@ -2,23 +2,57 @@ import { Suspense } from 'react';
 import CategoryNav from '@/components/CategoryNav';
 import CategoryPage from '@/components/CategoryPage';
 import Footer from '@/components/Footer';
-import { getProperties } from '@/lib/supabase/server-queries';
+import { getPropertiesPaginated } from '@/lib/supabase/queries';
+import { ITEMS_PER_PAGE } from '@/lib/types';
 import type { Property } from '@/data/properties';
 
 /**
- * Rent Category Page
+ * Rent Category Page with Server-Side Pagination
+ *
+ * ISR: Revalidates every 5 minutes
  */
-export default async function RentPage() {
-  let properties: Property[] = [];
+export const revalidate = 300;
+
+export default async function RentPage({
+  searchParams,
+}: {
+  searchParams: { page?: string; type?: string; minPrice?: string; maxPrice?: string; bedrooms?: string };
+}) {
+  const page = parseInt(searchParams.page || '1');
+  const subCategory = searchParams.type as 'apartment' | 'house' | 'commerce' | undefined;
+  const minPrice = searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined;
+  const maxPrice = searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined;
+  const minBedrooms = searchParams.bedrooms ? parseInt(searchParams.bedrooms) : undefined;
+
+  let result = {
+    data: [] as Property[],
+    pagination: {
+      page: 1,
+      pageSize: ITEMS_PER_PAGE,
+      totalCount: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+  };
 
   try {
-    const allProps = await getProperties();
-    // Filter for rent properties
-    properties = allProps.filter(p => p.listing_type === 'rent');
+    result = await getPropertiesPaginated({
+      page,
+      pageSize: ITEMS_PER_PAGE,
+      filters: {
+        listingType: 'rent',
+        subCategory,
+        minPrice,
+        maxPrice,
+        minBedrooms,
+      },
+      sortBy: 'date-desc',
+    });
   } catch (error) {
     console.error('Error loading properties:', error);
-    // Fallback to empty array (until data is migrated)
-    properties = [];
+    // Fallback to empty array
+    result.data = [];
   }
 
   return (
@@ -31,9 +65,10 @@ export default async function RentPage() {
         </div>
       }>
         <CategoryPage
-          title="Propiedades en alquiler en Jávea"
-          properties={properties}
+          title="Propiedades en alquiler"
+          properties={result.data}
           categoryType="rent"
+          pagination={result.pagination}
         />
       </Suspense>
       <Footer />

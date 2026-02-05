@@ -2,29 +2,61 @@ import { Suspense } from 'react';
 import CategoryNav from '@/components/CategoryNav';
 import CategoryPage from '@/components/CategoryPage';
 import Footer from '@/components/Footer';
-import { getProperties } from '@/lib/supabase/server-queries';
+import { getPropertiesPaginated } from '@/lib/supabase/queries';
 import { allProperties as fallbackProperties } from '@/data/properties';
+import { ITEMS_PER_PAGE } from '@/lib/types';
 import type { Property } from '@/data/properties';
 
 /**
- * Sale Category Page
+ * Sale Category Page with Server-Side Pagination
+ *
+ * ISR: Revalidates every 5 minutes
  */
-export default async function SalePage() {
-  let properties: Property[] = [];
+export const revalidate = 300;
+
+export default async function SalePage({
+  searchParams,
+}: {
+  searchParams: { page?: string; type?: string; minPrice?: string; maxPrice?: string; bedrooms?: string };
+}) {
+  const page = parseInt(searchParams.page || '1');
+  const subCategory = searchParams.type as 'apartment' | 'house' | 'commerce' | 'plot' | undefined;
+  const minPrice = searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined;
+  const maxPrice = searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined;
+  const minBedrooms = searchParams.bedrooms ? parseInt(searchParams.bedrooms) : undefined;
+
+  let result = {
+    data: [] as Property[],
+    pagination: {
+      page: 1,
+      pageSize: ITEMS_PER_PAGE,
+      totalCount: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+  };
 
   try {
-    const allProps = await getProperties();
-    // Filter for sale properties (including old 'type' field for backwards compatibility)
-    properties = allProps.filter(p =>
-      p.listing_type === 'sale' ||
-      (!p.listing_type && ['house', 'plot', 'investment'].includes(p.type))
-    );
+    result = await getPropertiesPaginated({
+      page,
+      pageSize: ITEMS_PER_PAGE,
+      filters: {
+        listingType: 'sale',
+        subCategory,
+        minPrice,
+        maxPrice,
+        minBedrooms,
+      },
+      sortBy: 'date-desc',
+    });
   } catch (error) {
     console.error('Error loading properties:', error);
     // Fallback to static data
-    properties = fallbackProperties.filter(p =>
+    result.data = fallbackProperties.filter(p =>
       ['house', 'plot', 'investment'].includes(p.type)
-    );
+    ).slice(0, ITEMS_PER_PAGE);
+    result.pagination.totalCount = result.data.length;
   }
 
   return (
@@ -37,9 +69,10 @@ export default async function SalePage() {
         </div>
       }>
         <CategoryPage
-          title="Propiedades en venta en Jávea"
-          properties={properties}
+          title="Propiedades en venta"
+          properties={result.data}
           categoryType="sale"
+          pagination={result.pagination}
         />
       </Suspense>
       <Footer />

@@ -53,6 +53,15 @@ export interface Property {
   created_at?: string;
   updated_at?: string;
   scraped_at?: string;
+  // Location hierarchy (SEO)
+  region?: string;
+  province?: string;
+  municipality?: string;
+  neighborhood?: string;
+  postal_code?: string;
+  // Geolocation
+  latitude?: number;
+  longitude?: number;
 }
 
 // Sample properties for "Casas y Pisos"

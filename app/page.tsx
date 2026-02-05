@@ -25,10 +25,60 @@
 import CategoryNav from '@/components/CategoryNav';
 import PropertyCard from '@/components/PropertyCard';
 import Footer from '@/components/Footer';
+import { OrganizationStructuredData, SearchBoxStructuredData } from '@/components/StructuredData';
 import { Building2, Home as HomeIcon, Key, Store, MapPin, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getFeaturedPropertiesForCards, type PropertyCard as PropertyCardType } from '@/lib/supabase/server-queries';
+import type { Metadata } from 'next';
+
+/**
+ * Homepage Metadata for SEO
+ */
+export const metadata: Metadata = {
+  title: 'Miraluna - Propiedades en Venta y Alquiler en España | Valencia, Madrid',
+  description: 'Encuentra tu propiedad ideal en Valencia y Madrid. Miles de pisos, casas, chalets y obra nueva en las mejores zonas de España. Actualizado diariamente.',
+  keywords: 'inmobiliaria España, pisos Valencia, casas Madrid, alquiler Valencia, venta pisos, obra nueva, real estate Spain',
+  openGraph: {
+    title: 'Miraluna - Portal Inmobiliario España',
+    description: 'Las mejores propiedades en Valencia y Madrid. Miles de opciones actualizadas diariamente.',
+    url: 'https://miraluna.es',
+    siteName: 'Miraluna',
+    images: [{
+      url: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=630&fit=crop',
+      width: 1200,
+      height: 630,
+      alt: 'Miraluna - Propiedades en España',
+    }],
+    locale: 'es_ES',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Miraluna - Inmobiliaria España',
+    description: 'Propiedades en venta y alquiler en Valencia y Madrid',
+    images: ['https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=630&fit=crop'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: 'https://miraluna.es',
+    languages: {
+      'es-ES': 'https://miraluna.es',
+      'en-GB': 'https://miraluna.es/en',
+      'ru-RU': 'https://miraluna.es/ru',
+    },
+  },
+};
 
 /**
  * ISR Configuration: Rebuild page every 24 hours
@@ -53,8 +103,13 @@ export default async function Home() {
   const totalProperties = saleProperties.length + rentProperties.length + newBuildingProperties.length;
 
   return (
-    <main className="min-h-screen bg-background">
-      <CategoryNav showCategories={false} />
+    <>
+      {/* SEO Structured Data */}
+      <OrganizationStructuredData />
+      <SearchBoxStructuredData />
+
+      <main className="min-h-screen bg-background">
+        <CategoryNav showCategories={false} />
 
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section - 2 column grid */}
@@ -414,5 +469,6 @@ export default async function Home() {
 
       <Footer />
     </main>
+    </>
   );
 }

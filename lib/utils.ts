@@ -6,6 +6,21 @@
  */
 
 import type { Locale } from './i18n';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * Merge Tailwind CSS classes with proper precedence
+ *
+ * @param inputs - Class names to merge
+ * @returns Merged class names
+ *
+ * @example
+ * cn('px-4 py-2', 'bg-primary', className)
+ */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 /**
  * Format price as currency with proper locale formatting

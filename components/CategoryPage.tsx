@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import PropertyCard from './PropertyCard';
+import { Pagination } from './Pagination';
 import type { Property } from '@/data/properties';
 import { Building2, Home as HomeIcon, Key, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 
@@ -10,19 +11,26 @@ interface CategoryPageProps {
   title: string;
   properties: Property[];
   categoryType: 'new-building' | 'sale' | 'rent';
+  pagination?: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
-export default function CategoryPage({ title, properties, categoryType }: CategoryPageProps) {
+export default function CategoryPage({ title, properties, categoryType, pagination }: CategoryPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [minBedrooms, setMinBedrooms] = useState('');
 
-  // Get selected subcategory from URL
+  // Get values from URL params
   const selectedSubCategory = searchParams.get('type') || null;
+  const minPrice = searchParams.get('minPrice') || '';
+  const maxPrice = searchParams.get('maxPrice') || '';
+  const minBedrooms = searchParams.get('bedrooms') || '';
 
   // Define subcategories based on category type
   const subcategories = categoryType === 'new-building'
@@ -37,42 +45,9 @@ export default function CategoryPage({ title, properties, categoryType }: Catego
         ...(categoryType === 'sale' ? [{ id: 'plot', label: 'Parcelas', icon: MapPin }] : []),
       ];
 
-  // Filter properties
-  let filteredProperties = properties;
-
-  // Filter by subcategory
-  if (selectedSubCategory && selectedSubCategory !== 'all') {
-    filteredProperties = filteredProperties.filter(p => p.sub_category === selectedSubCategory);
-  }
-
-  // Filter by search query
-  if (searchQuery.trim()) {
-    const query = searchQuery.toLowerCase();
-    filteredProperties = filteredProperties.filter(p =>
-      p.title?.toLowerCase().includes(query) ||
-      p.title_en?.toLowerCase().includes(query) ||
-      p.title_es?.toLowerCase().includes(query) ||
-      p.location?.toLowerCase().includes(query)
-    );
-  }
-
-  // Filter by price
-  if (minPrice) {
-    filteredProperties = filteredProperties.filter(p => p.price >= parseInt(minPrice));
-  }
-  if (maxPrice) {
-    filteredProperties = filteredProperties.filter(p => p.price <= parseInt(maxPrice));
-  }
-
-  // Filter by bedrooms
-  if (minBedrooms) {
-    filteredProperties = filteredProperties.filter(p =>
-      p.specs?.bedrooms && p.specs.bedrooms >= parseInt(minBedrooms)
-    );
-  }
-
   const handleSubcategoryChange = (subcategoryId: string) => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete('page'); // Reset to page 1
     if (subcategoryId === 'all') {
       params.delete('type');
     } else {
@@ -81,46 +56,37 @@ export default function CategoryPage({ title, properties, categoryType }: Catego
     router.push(`?${params.toString()}`);
   };
 
-  const clearFilters = () => {
-    setSearchQuery('');
-    setMinPrice('');
-    setMaxPrice('');
-    setMinBedrooms('');
+  const handleFilterChange = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('page'); // Reset to page 1 when filters change
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.push(`?${params.toString()}`);
   };
 
-  const hasActiveFilters = searchQuery || minPrice || maxPrice || minBedrooms;
+  const clearFilters = () => {
+    const params = new URLSearchParams();
+    // Keep category type if set
+    if (selectedSubCategory && selectedSubCategory !== 'all') {
+      params.set('type', selectedSubCategory);
+    }
+    router.push(`?${params.toString()}`);
+  };
+
+  const hasActiveFilters = minPrice || maxPrice || minBedrooms;
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por ubicación, título..."
-            className="w-full px-4 py-3 pl-12 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Header with Filters Toggle */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2">{title}</h1>
             <p className="text-muted-foreground">
-              {filteredProperties.length} {filteredProperties.length === 1 ? 'propiedad' : 'propiedades'}
+              {pagination ? `${pagination.totalCount} ${pagination.totalCount === 1 ? 'propiedad' : 'propiedades'}` : `${properties.length} propiedades`}
               {selectedSubCategory && selectedSubCategory !== 'all' && ` (${subcategories.find(s => s.id === selectedSubCategory)?.label})`}
             </p>
           </div>
@@ -162,7 +128,7 @@ export default function CategoryPage({ title, properties, categoryType }: Catego
                 <input
                   type="number"
                   value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
+                  onChange={(e) => handleFilterChange('minPrice', e.target.value)}
                   placeholder="€"
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -172,7 +138,7 @@ export default function CategoryPage({ title, properties, categoryType }: Catego
                 <input
                   type="number"
                   value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
+                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
                   placeholder="€"
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -181,7 +147,7 @@ export default function CategoryPage({ title, properties, categoryType }: Catego
                 <label className="block text-sm font-medium mb-2">Habitaciones mínimas</label>
                 <select
                   value={minBedrooms}
-                  onChange={(e) => setMinBedrooms(e.target.value)}
+                  onChange={(e) => handleFilterChange('bedrooms', e.target.value)}
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Cualquiera</option>
@@ -221,12 +187,24 @@ export default function CategoryPage({ title, properties, categoryType }: Catego
       </div>
 
       {/* Properties grid */}
-      {filteredProperties.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+      {properties.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {properties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {pagination && (
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              totalCount={pagination.totalCount}
+              hasNextPage={pagination.hasNextPage}
+            />
+          )}
+        </>
       ) : (
         <div className="text-center py-16">
           <p className="text-lg text-muted-foreground mb-4">

@@ -2,24 +2,57 @@ import { Suspense } from 'react';
 import CategoryNav from '@/components/CategoryNav';
 import CategoryPage from '@/components/CategoryPage';
 import Footer from '@/components/Footer';
-import { getProperties } from '@/lib/supabase/server-queries';
-import { allProperties as fallbackProperties } from '@/data/properties';
+import { getPropertiesPaginated } from '@/lib/supabase/queries';
+import { ITEMS_PER_PAGE } from '@/lib/types';
 import type { Property } from '@/data/properties';
 
 /**
- * New Buildings Category Page
+ * New Buildings Category Page with Server-Side Pagination
+ *
+ * ISR: Revalidates every 5 minutes
  */
-export default async function NewBuildingsPage() {
-  let properties: Property[] = [];
+export const revalidate = 300;
+
+export default async function NewBuildingsPage({
+  searchParams,
+}: {
+  searchParams: { page?: string; type?: string; minPrice?: string; maxPrice?: string; bedrooms?: string };
+}) {
+  const page = parseInt(searchParams.page || '1');
+  const subCategory = searchParams.type as 'apartment' | 'house' | 'commerce' | undefined;
+  const minPrice = searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined;
+  const maxPrice = searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined;
+  const minBedrooms = searchParams.bedrooms ? parseInt(searchParams.bedrooms) : undefined;
+
+  let result = {
+    data: [] as Property[],
+    pagination: {
+      page: 1,
+      pageSize: ITEMS_PER_PAGE,
+      totalCount: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+  };
 
   try {
-    const allProps = await getProperties();
-    // Filter for new buildings
-    properties = allProps.filter(p => p.listing_type === 'new-building');
+    result = await getPropertiesPaginated({
+      page,
+      pageSize: ITEMS_PER_PAGE,
+      filters: {
+        listingType: 'new-building',
+        subCategory,
+        minPrice,
+        maxPrice,
+        minBedrooms,
+      },
+      sortBy: 'date-desc',
+    });
   } catch (error) {
     console.error('Error loading properties:', error);
-    // Fallback to empty array for now (until data is migrated)
-    properties = [];
+    // Fallback to empty array
+    result.data = [];
   }
 
   return (
@@ -32,9 +65,10 @@ export default async function NewBuildingsPage() {
         </div>
       }>
         <CategoryPage
-          title="Obra nueva en Jávea"
-          properties={properties}
+          title="Obra nueva"
+          properties={result.data}
           categoryType="new-building"
+          pagination={result.pagination}
         />
       </Suspense>
       <Footer />
