@@ -1,229 +1,179 @@
-# Miraluna - Spain Real Estate Platform
+# Miraluna Valencia - Real Estate Platform
 
-A high-performance, multilingual real estate aggregator for Spain, built with Next.js 14, Supabase, and TypeScript.
+A high-performance, multilingual real estate aggregator for Valencia and Spain.
 
-**Current Coverage:** Valencia & Madrid regions
-**Target Scale:** 100K+ properties across Spain
-**Load Time:** <1s on 3G networks
+**Live:** [miralunavalencia.com](https://miralunavalencia.com)
+**Stack:** Next.js 14, Supabase, TypeScript, Tailwind CSS
+
+---
+
+## Features
+
+### Implemented
+
+- **Multi-language Support** (ES/EN/RU) - Full i18n with language selector
+- **Server-Side Pagination** - 24 items/page with URL state
+- **Search & Filters** - Full-text search, price range, bedrooms, property type
+- **Sort Options** - Price, date, size (ascending/descending)
+- **Category Navigation** - Sale, Rent, New Buildings with subcategories
+- **ISR Caching** - Homepage 24h, category pages 5min
+- **Image Optimization** - WebP conversion, lazy loading
+- **SEO Ready** - Metadata, sitemap.xml, robots.txt, JSON-LD
+- **Mobile-First Design** - Responsive across all devices
+- **Dark Mode Support** - System preference detection
+
+### Performance
+
+| Metric | Target | Actual |
+|--------|--------|--------|
+| First Contentful Paint | <1s | 50-200ms |
+| Time to Interactive | <3s | 500ms |
+| Homepage payload | <30KB | 20KB |
+| Lighthouse Score | 90+ | 95+ |
 
 ---
 
 ## Quick Start
 
 ```bash
-# Install dependencies
+# Install
 npm install
 
-# Set up environment variables
-cp .env.example .env.local
-# Add your Supabase credentials
-
-# Run development server
+# Development
 npm run dev
+
+# Production build
+npm run build && npm start
 ```
 
-Visit `http://localhost:3000`
-
----
-
-## Architecture Overview
-
-### Performance-First Design
-
-- **ISR Caching:** Homepage cached for 24 hours (rebuilds after daily scrape)
-- **Data Minimization:** 90% reduction in property data transfer
-- **Image Optimization:** Automatic WebP conversion + lazy loading
-- **Load Time:** 10-50ms homepage (cached), <1s first visit
-
-See [PERFORMANCE.md](./PERFORMANCE.md) for complete architecture details.
-
-### Geographic Coverage
-
-**Valencia Region (Comunidad Valenciana):**
-- Alicante Province: Jávea, Alicante, Benidorm, Torrevieja, Denia, Calpe, Altea, etc.
-- Valencia Province: Valencia, Gandía, Torrent, Sagunto, Cullera, etc.
-- Castellón Province: Castellón, Vila-real, Benicàssim, Peñíscola, etc.
-
-**Madrid Region (Comunidad de Madrid):**
-- Madrid city + metropolitan area
-- Alcalá de Henares, Móstoles, Getafe, etc.
-
-### Categories
-
-**Main Listing Types:**
-- **Sale** (Venta): Apartments, Houses, Commerce, Land Plots
-- **Rent** (Alquiler): Apartments, Houses, Commerce
-- **New Buildings** (Obra Nueva): New construction projects
-
----
-
-## Tech Stack
-
-- **Framework:** Next.js 14 (App Router, Server Components, ISR)
-- **Database:** Supabase (PostgreSQL + PostGIS for geospatial queries)
-- **Styling:** Tailwind CSS
-- **Language:** TypeScript
-- **Images:** next/image (automatic WebP, lazy loading)
-- **Maps:** TBD (evaluating Mapbox GL JS vs Leaflet)
-- **i18n:** Spanish (ES), English (EN), Russian (RU)
+**Environment Variables:**
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
 
 ---
 
 ## Project Structure
 
 ```
-/app/                    # Next.js App Router pages
-  page.tsx              # Homepage (ISR: 24h cache)
-  categoria/            # Category pages (ISR: 5min cache)
-    venta/             # Sale properties
-    alquiler/          # Rent properties
-    obra-nueva/        # New buildings
-  propiedad/[id]/      # Property detail pages
-  buscar/              # Search page
-  profile/             # User saved properties
+app/
+  page.tsx                    # Homepage (ISR: 24h)
+  categoria/
+    venta/page.tsx           # Sale listings (ISR: 5min)
+    alquiler/page.tsx        # Rent listings
+    obra-nueva/page.tsx      # New buildings
+  propiedad/[id]/page.tsx    # Property detail
+  sitemap.ts                  # Dynamic sitemap
+  robots.ts                   # Robots.txt
 
-/components/            # React components
-  CategoryNav.tsx      # Mobile-first navigation
-  CategoryPage.tsx     # Reusable category listing
-  PropertyCard.tsx     # Optimized property cards
-  Footer.tsx
-  MiralunaLogo.tsx
-  SavePropertyButton.tsx
+components/
+  CategoryNav.tsx            # Navigation with mobile menu
+  CategoryPage.tsx           # Listing page with search/sort/filters
+  PropertyCard.tsx           # Property card component
+  Pagination.tsx             # Load more pagination
+  Footer.tsx                 # Multilingual footer
 
-/lib/                   # Business logic & utilities
-  utils.ts            # Shared utilities (formatPrice, etc.)
-  i18n.ts             # Translation system
+lib/
+  i18n.ts                    # Translation system
+  utils.ts                   # formatPrice, slugify, etc.
   supabase/
-    server-queries.ts  # Server-side data fetching (ISR)
-    queries.ts         # Client-side queries
-    client.ts          # Supabase client
-    server.ts          # Supabase server client
+    queries.ts               # Database queries
+    client.ts                # Supabase client
 
-/data/                  # Static data (fallbacks)
-  properties.ts        # Fallback property data
-
-/docs/                  # Documentation
-  ARCHITECTURE.md      # System design
-  DATABASE.md          # Schema & queries
-  COMPONENTS.md        # Component patterns
-  TRANSLATION.md       # i18n implementation
+docs/
+  DATABASE.md                # Schema documentation
+  ARCHITECTURE.md            # System design
+  TRANSLATION.md             # i18n guide
 ```
 
 ---
 
 ## Database Schema
 
-### Core Tables
+Clean, minimal schema. See `docs/DATABASE.md` for full details.
 
-**properties** - Main property listings
-- Location hierarchy: country → region → province → municipality → neighborhood
-- Geospatial: latitude, longitude (PostGIS indexed)
-- Categories: listing_type (sale/rent/new-building), sub_category (apartment/house/commerce/plot)
-- Multilingual: title_*, description_*, features_* for ES/EN/RU
-- Analytics: views_count, saves_count, clicks_count
+```sql
+-- Main table
+properties (id, listing_type, title, price, location, images, specs, ...)
 
-**locations** - Reference data for cities/provinces
-- Used for autocomplete and validation
-- Population data for sorting
+-- Fast search view
+card_properties (materialized view with search_vector)
 
-**user_favorites** (coming soon) - Saved properties per user
+-- Optional translations
+translations (property_id, locale, title, description)
 
-### Migrations
+-- Category views
+properties_for_sale, properties_for_rent, properties_new_building
+```
 
-Run migrations in order:
+**Setup:**
 ```bash
-# 1. Base schema
-psql $DATABASE_URL < database-properties-setup.sql
-
-# 2. Spain expansion (regions, geospatial)
-psql $DATABASE_URL < database-spain-expansion.sql
-
-# 3. Additional migrations
-psql $DATABASE_URL < database-migrations.sql
+psql $DATABASE_URL < database-clean-schema.sql
 ```
-
-See [docs/DATABASE.md](./docs/DATABASE.md) for full schema details.
 
 ---
 
-## Key Features
+## Key Implementation Details
 
-### Current (Production-Ready)
+### ISR Caching Strategy
 
-✅ Mobile-first responsive design
-✅ Multi-language support (ES/EN/RU)
-✅ ISR caching for instant page loads
-✅ Image optimization (WebP + lazy loading)
-✅ Category browsing (Sale, Rent, New Buildings)
-✅ Search and filtering (price, bedrooms, location)
-✅ Property detail pages with image galleries
-✅ User authentication (Google OAuth via Supabase)
-✅ Saved properties (client-side)
+```typescript
+// Homepage - rebuild daily after scrape
+export const revalidate = 86400;
 
-### In Progress (Week 2)
+// Category pages - 5 minute refresh
+export const revalidate = 300;
+```
 
-🚧 Server-side pagination (for 10K+ properties)
-🚧 Map view with property clustering
-🚧 SEO optimization (metadata, sitemap.xml, JSON-LD)
-🚧 Advanced filters (price/m², year built, amenities)
+### Search & Filters
 
-### Planned (Month 2-3)
+URL-based state for shareability:
+```
+/categoria/venta?search=valencia&minPrice=100000&maxPrice=500000&sortBy=price-asc&page=2
+```
 
-📋 Persistent saved properties (Supabase table)
-📋 Email alerts for new properties
-📋 Property comparison (side-by-side)
-📋 Mortgage calculator
-📋 Admin dashboard
-📋 Scraper integration (Idealista, Fotocasa, etc.)
+### Translations
+
+Spanish is primary. EN/RU stored in separate table, loaded on demand.
+
+```typescript
+const { locale } = useLanguage();
+const title = getPropertyTitle(property, locale);
+```
+
+### Domain Configuration
+
+Primary: `miralunavalencia.com`
+Redirects: `www.miralunavalencia.com` -> `miralunavalencia.com`
+
+Configure `.es` redirects in Vercel Dashboard > Domains (not in Next.js to avoid loops).
 
 ---
 
-## Performance Metrics
+## Scraping Integration
 
-| Metric | Target | Actual |
-|--------|--------|--------|
-| First Contentful Paint | <1s | 50-200ms ✅ |
-| Largest Contentful Paint | <2.5s | 400-800ms ✅ |
-| Time to Interactive | <3s | 500-1000ms ✅ |
-| Homepage payload | <30KB | 20KB ✅ |
-| Property card data | <1KB | 500 bytes ✅ |
+Properties are inserted from scrapers (Idealista, Fotocasa, etc.):
 
-**Lighthouse Score:** 95+ (Performance, Accessibility, Best Practices, SEO)
+```typescript
+await supabase.from('properties').upsert({
+  id: 'idealista-12345',
+  listing_type: 'sale',
+  sub_category: 'apartment',
+  title: 'Piso en Valencia Centro',
+  price: 185000,
+  location: 'Valencia, Ciutat Vella',
+  municipality: 'Valencia',
+  province: 'Valencia',
+  images: ['https://...'],
+  specs: { bedrooms: 3, bathrooms: 2, size: 95 },
+  source: 'idealista',
+  source_id: '12345'
+}, { onConflict: 'source,source_id' });
 
-See [PERFORMANCE.md](./PERFORMANCE.md) for detailed metrics and scaling strategy.
-
----
-
-## Development Workflow
-
-### Running Locally
-
-```bash
-# Development server with hot reload
-npm run dev
-
-# Production build
-npm run build
-npm start
-
-# Type checking
-npm run lint
+// Refresh card view after bulk insert
+await supabase.rpc('refresh_card_properties');
 ```
-
-### Environment Variables
-
-```env
-# .env.local
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### Database Setup
-
-1. Create Supabase project at https://supabase.com
-2. Run migrations (see Database Schema section above)
-3. Enable PostGIS extension: `CREATE EXTENSION IF NOT EXISTS postgis;`
-4. Configure RLS policies (included in migrations)
 
 ---
 
@@ -232,50 +182,43 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ### Vercel (Recommended)
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-
-# Set environment variables in Vercel dashboard
-# https://vercel.com/your-project/settings/environment-variables
+vercel --prod
 ```
 
-**ISR Functions:** Homepage and category pages use ISR caching (see build output)
-**Edge Caching:** Vercel CDN automatically caches static assets
-**Database:** Supabase handles scaling, backups, and connection pooling
+Environment variables in Vercel Dashboard.
 
-### Cost Estimate
+### Domain Setup
 
-| Scale | Infrastructure | Monthly Cost |
-|-------|---------------|--------------|
-| 10K properties | Vercel Pro + Supabase Pro | $45-85 |
-| 100K properties | Vercel Pro + Supabase Team | $629 |
-| 1M properties | Vercel Enterprise + Supabase Enterprise | $2700-3200 |
+1. Add domains in Vercel Dashboard
+2. Configure DNS:
+   - `A` record: `@` -> `76.76.21.21`
+   - `CNAME` record: `www` -> `cname.vercel-dns.com`
+3. Enable HTTPS (automatic)
 
 ---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [PERFORMANCE.md](./PERFORMANCE.md) | Complete performance architecture, caching strategy, scaling plan |
-| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System design, folder structure, tech decisions |
-| [docs/DATABASE.md](./docs/DATABASE.md) | Schema, tables, RLS policies, query patterns |
-| [docs/TRANSLATION.md](./docs/TRANSLATION.md) | i18n system, formatPrice, getPropertyTitle |
-| [docs/COMPONENTS.md](./docs/COMPONENTS.md) | Component patterns, shared utilities |
-| [docs/DATA_FLOW.md](./docs/DATA_FLOW.md) | How data moves from DB to UI |
+| File | Description |
+|------|-------------|
+| `docs/DATABASE.md` | Schema, queries, migrations |
+| `docs/ARCHITECTURE.md` | System design |
+| `docs/TRANSLATION.md` | i18n implementation |
+| `docs/COMPONENTS.md` | Component patterns |
+| `PERFORMANCE.md` | Caching, optimization |
+| `PAGINATION_COMPLETE.md` | Pagination implementation |
+| `SEO_SETUP_COMPLETE.md` | SEO configuration |
 
 ---
 
-## Contributing
+## Tech Stack
 
-Before making changes:
-1. Read [PERFORMANCE.md](./PERFORMANCE.md) to understand caching strategy
-2. Follow mobile-first design principles
-3. Test on 3G network simulation
-4. Run `npm run build` to verify no errors
+- **Framework:** Next.js 14 (App Router, Server Components, ISR)
+- **Database:** Supabase (PostgreSQL)
+- **Styling:** Tailwind CSS
+- **Icons:** Lucide React
+- **Language:** TypeScript
+- **Deployment:** Vercel
 
 ---
 
@@ -287,7 +230,4 @@ Proprietary - All rights reserved
 
 ## Contact
 
-For questions about the codebase or deployment, see inline code comments or contact the development team.
-
-**Project Status:** Production-ready for Valencia & Madrid regions
-**Next Milestone:** Week 2 - Map view + SEO optimization + Pagination
+Issues: [GitHub Issues](https://github.com/your-repo/issues)

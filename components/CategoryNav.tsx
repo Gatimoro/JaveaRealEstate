@@ -159,7 +159,7 @@ export default function CategoryNav({ showCategories = true }: CategoryNavProps)
               <span className="text-xl font-bold">
                 mira<span className="text-primary">luna</span>
               </span>
-              <span className="text-xs sm:text-sm text-muted-foreground">Jávea</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Valencia</span>
             </div>
           </Link>
 

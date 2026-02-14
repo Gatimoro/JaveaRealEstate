@@ -17,13 +17,15 @@ export const revalidate = 300;
 export default async function SalePage({
   searchParams,
 }: {
-  searchParams: { page?: string; type?: string; minPrice?: string; maxPrice?: string; bedrooms?: string };
+  searchParams: { page?: string; type?: string; minPrice?: string; maxPrice?: string; bedrooms?: string; search?: string; sortBy?: string };
 }) {
   const page = parseInt(searchParams.page || '1');
   const subCategory = searchParams.type as 'apartment' | 'house' | 'commerce' | 'plot' | undefined;
   const minPrice = searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined;
   const maxPrice = searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined;
   const minBedrooms = searchParams.bedrooms ? parseInt(searchParams.bedrooms) : undefined;
+  const search = searchParams.search || undefined;
+  const sortBy = (searchParams.sortBy || 'date-desc') as 'price-asc' | 'price-desc' | 'date-desc' | 'date-asc' | 'size-desc' | 'size-asc';
 
   let result = {
     data: [] as Property[],
@@ -47,8 +49,9 @@ export default async function SalePage({
         minPrice,
         maxPrice,
         minBedrooms,
+        search,
       },
-      sortBy: 'date-desc',
+      sortBy,
     });
   } catch (error) {
     console.error('Error loading properties:', error);

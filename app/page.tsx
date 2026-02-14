@@ -113,14 +113,14 @@ export default async function Home() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section - 2 column grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-          {/* Left side - Category selection */}
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-12">
+          {/* Left side - Category selection (3 cols) */}
+          <div className="lg:col-span-3 space-y-4">
             {/* Top row - New Builds & Rent */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* New Builds */}
               <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all">
-                <div className="p-4 bg-primary/5 border-b border-border">
+                <div className="p-3 bg-primary/5 border-b border-border">
                   <h2 className="text-lg font-bold flex items-center gap-2">
                     <Building2 className="w-5 h-5" />
                     Obra nueva
@@ -128,42 +128,44 @@ export default async function Home() {
                 </div>
                 <Link
                   href="/categoria/obra-nueva"
-                  className="flex items-center justify-center gap-3 p-8 hover:bg-primary/5 transition-colors min-h-[140px]"
+                  className="flex items-center justify-center gap-3 p-4 hover:bg-primary/5 transition-colors min-h-[100px]"
                 >
-                  <Building2 className="w-8 h-8 text-primary" />
+                  <Building2 className="w-6 h-6 text-primary" />
                   <div className="text-center">
-                    <div className="font-semibold">Todos los proyectos</div>
-                    <div className="text-xs text-muted-foreground mt-1">Ver obra nueva</div>
+                    <div className="font-semibold text-sm">Todos los proyectos</div>
                   </div>
                 </Link>
               </div>
 
               {/* Rent */}
               <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all">
-                <div className="p-4 bg-orange-500/5 border-b border-border">
+                <div className="p-3 bg-orange-500/5 border-b border-border flex items-center justify-between">
                   <h2 className="text-lg font-bold flex items-center gap-2">
                     <Key className="w-5 h-5" />
                     Alquiler
                   </h2>
+                  <Link href="/categoria/alquiler" className="text-xs text-primary hover:underline">
+                    Ver todos
+                  </Link>
                 </div>
                 <div className="grid grid-cols-3 divide-x divide-border">
                   <Link
                     href="/categoria/alquiler?type=apartment"
-                    className="flex flex-col items-center justify-center gap-2 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
+                    className="flex flex-col items-center justify-center gap-1 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
                   >
                     <Building2 className="w-5 h-5 text-primary" />
                     <div className="text-xs font-medium text-center">Apartamentos</div>
                   </Link>
                   <Link
                     href="/categoria/alquiler?type=house"
-                    className="flex flex-col items-center justify-center gap-2 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
+                    className="flex flex-col items-center justify-center gap-1 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
                   >
                     <HomeIcon className="w-5 h-5 text-primary" />
                     <div className="text-xs font-medium text-center">Casas</div>
                   </Link>
                   <Link
                     href="/categoria/alquiler?type=commerce"
-                    className="flex flex-col items-center justify-center gap-2 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
+                    className="flex flex-col items-center justify-center gap-1 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
                   >
                     <Store className="w-5 h-5 text-primary" />
                     <div className="text-xs font-medium text-center">Comercial</div>
@@ -174,37 +176,40 @@ export default async function Home() {
 
             {/* Bottom row - Sale (full width) */}
             <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all">
-              <div className="p-4 bg-green-500/5 border-b border-border">
+              <div className="p-3 bg-green-500/5 border-b border-border flex items-center justify-between">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   <HomeIcon className="w-5 h-5" />
                   Venta
                 </h2>
+                <Link href="/categoria/venta" className="text-xs text-primary hover:underline">
+                  Ver todos
+                </Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-border">
                 <Link
                   href="/categoria/venta?type=apartment"
-                  className="flex flex-col items-center justify-center gap-2 p-4 hover:bg-primary/5 transition-colors min-h-[100px]"
+                  className="flex flex-col items-center justify-center gap-1 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
                 >
                   <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   <div className="text-xs sm:text-sm font-medium text-center">Apartamentos</div>
                 </Link>
                 <Link
                   href="/categoria/venta?type=house"
-                  className="flex flex-col items-center justify-center gap-2 p-4 hover:bg-primary/5 transition-colors min-h-[100px]"
+                  className="flex flex-col items-center justify-center gap-1 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
                 >
                   <HomeIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   <div className="text-xs sm:text-sm font-medium text-center">Casas</div>
                 </Link>
                 <Link
                   href="/categoria/venta?type=commerce"
-                  className="flex flex-col items-center justify-center gap-2 p-4 hover:bg-primary/5 transition-colors min-h-[100px]"
+                  className="flex flex-col items-center justify-center gap-1 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
                 >
                   <Store className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   <div className="text-xs sm:text-sm font-medium text-center">Comercial</div>
                 </Link>
                 <Link
                   href="/categoria/venta?type=plot"
-                  className="flex flex-col items-center justify-center gap-2 p-4 hover:bg-primary/5 transition-colors min-h-[100px]"
+                  className="flex flex-col items-center justify-center gap-1 p-3 hover:bg-primary/5 transition-colors min-h-[100px]"
                 >
                   <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   <div className="text-xs sm:text-sm font-medium text-center">Parcelas</div>
@@ -213,8 +218,8 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Right side - Call to action with optimized image */}
-          <div className="relative rounded-xl overflow-hidden min-h-[400px] lg:min-h-full">
+          {/* Right side - Call to action with optimized image (2 cols) */}
+          <div className="lg:col-span-2 relative rounded-xl overflow-hidden min-h-[400px] lg:min-h-full">
             <Image
               src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=800&fit=crop"
               alt="Costa Blanca sea view"
@@ -231,7 +236,7 @@ export default async function Home() {
                   Encuentra tu propiedad ideal
                 </h1>
                 <p className="text-lg md:text-xl mb-2 opacity-90">
-                  en Jávea
+                  en Valencia
                 </p>
                 <p className="text-sm md:text-base opacity-80 max-w-md mx-auto">
                   Obra nueva, alquiler y venta de propiedades en la Costa Blanca
@@ -284,7 +289,7 @@ export default async function Home() {
                 <div>
                   <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
                     <Building2 className="w-6 h-6 text-primary" />
-                    Obra nueva en Jávea
+                    Obra nueva en Valencia
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     Nuevos proyectos de construcción
@@ -372,7 +377,7 @@ export default async function Home() {
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
                       <Building2 className="w-6 h-6 text-primary" />
-                      Obra nueva en Jávea
+                      Obra nueva en Valencia
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       Nuevos proyectos de construcción
@@ -392,7 +397,7 @@ export default async function Home() {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground text-center mt-6">
-                  Próximamente: proyectos de obra nueva en Jávea
+                  Próximamente: proyectos de obra nueva en Valencia
                 </p>
               </section>
 
@@ -421,7 +426,7 @@ export default async function Home() {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground text-center mt-6">
-                  Próximamente: propiedades en alquiler en Jávea
+                  Próximamente: propiedades en alquiler en Valencia
                 </p>
               </section>
             </>
@@ -433,11 +438,11 @@ export default async function Home() {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl font-bold mb-4">Sobre Miraluna</h2>
             <p className="text-muted-foreground mb-4">
-              Agregador de propiedades inmobiliarias en Jávea y Costa Blanca. Encuentra casas, apartamentos,
+              Agregador de propiedades inmobiliarias en Valencia y Costa Blanca. Encuentra casas, apartamentos,
               parcelas y oportunidades de inversión de múltiples fuentes en un solo lugar.
             </p>
             <p className="text-sm text-muted-foreground">
-              Plataforma de demostración • Javea Real Estate Aggregator
+              Plataforma de demostración • Valencia Real Estate Aggregator
             </p>
           </div>
         </section>

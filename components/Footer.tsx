@@ -20,7 +20,7 @@ export default function Footer() {
       investments: 'Inversiones',
       plots: 'Parcelas',
       contactUs: 'Contacto',
-      location: 'Jávea, Alicante, España',
+      location: 'Valencia, España',
       rights: '© 2025 miraluna. Todos los derechos reservados.',
     },
     en: {
@@ -35,7 +35,7 @@ export default function Footer() {
       investments: 'Investments',
       plots: 'Plots',
       contactUs: 'Contact',
-      location: 'Jávea, Alicante, Spain',
+      location: 'Valencia, Spain',
       rights: '© 2025 miraluna. All rights reserved.',
     },
     ru: {
@@ -50,7 +50,7 @@ export default function Footer() {
       investments: 'Инвестиции',
       plots: 'Участки',
       contactUs: 'Контакты',
-      location: 'Хавеа, Аликанте, Испания',
+      location: 'Валенсия, Испания',
       rights: '© 2025 miraluna. Все права защищены.',
     },
   };

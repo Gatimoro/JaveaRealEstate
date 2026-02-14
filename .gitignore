@@ -11,3 +11,10 @@ unique-properties.json
 scripts/scraped-properties.json
 **/scraped-*.json
 .vercel
+
+# Claude Code
+.claude/
+
+# Reports
+*.report.html
+report.html
