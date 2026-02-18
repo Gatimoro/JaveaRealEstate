@@ -2,7 +2,7 @@ node_modules/
 .next/
 .env
 .env.local
-
+scripts/
 # Scraped data files (generated, not source code)
 scraped-properties.json
 scraped-properties-translated.json

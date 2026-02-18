@@ -17,7 +17,7 @@
  */
 'use client';
 
-import { Bed, Bath, Maximize, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bed, Bath, Maximize, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -39,9 +39,20 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
 
   // For minimal PropertyCard type, use title directly (Spanish only)
   // For full Property type, use getPropertyTitle for translations
-  const title = 'title_en' in property
+  const rawTitle = 'title_en' in property
     ? getPropertyTitle(property as Property, locale)
     : property.title;
+
+  // Fallback: sub_category label → generic "Property"
+  const subCategoryLabel: Record<string, Record<string, string>> = {
+    apartment: { es: 'Apartamento', en: 'Apartment', ru: 'Квартира' },
+    house:     { es: 'Casa',        en: 'House',      ru: 'Дом' },
+    commerce:  { es: 'Local',       en: 'Commercial', ru: 'Коммерческая' },
+    plot:      { es: 'Parcela',     en: 'Plot',       ru: 'Участок' },
+  };
+  const title = rawTitle
+    || subCategoryLabel[property.sub_category ?? '']?.[locale]
+    || (locale === 'ru' ? 'Недвижимость' : locale === 'en' ? 'Property' : 'Propiedad');
 
   // Description only available in full Property type
   const description = 'description' in property
@@ -64,16 +75,22 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
     <div className={`group bg-card border border-border rounded-lg overflow-hidden hover:border-primary transition-all duration-300 hover-glow ${fullWidthMobile ? 'w-full' : 'w-full max-w-md'}`}>
       <Link href={`/propiedad/${property.id}`}>
         {/* Image with price overlay - Optimized with next/image */}
-        <div className="relative h-48 sm:h-56 overflow-hidden">
-          <Image
-            src={property.images[0]}
-            alt={title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover group-hover:scale-110 transition-transform duration-300"
-            loading="lazy"
-            quality={85}
-          />
+        <div className="relative h-48 sm:h-56 overflow-hidden bg-muted">
+          {property.images?.[0] ? (
+            <Image
+              src={property.images[0]}
+              alt={title}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-110 transition-transform duration-300"
+              loading="lazy"
+              quality={85}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Building2 className="w-16 h-16 text-muted-foreground/30" />
+            </div>
+          )}
 
           {/* Badge */}
           {property.badge && (
