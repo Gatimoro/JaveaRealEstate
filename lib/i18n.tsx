@@ -116,6 +116,12 @@ export const translations = {
     averagePrice: 'Precio promedio',
     totalProperties: 'propiedades',
 
+    // Carousel & badges
+    exploreAll: 'Explorar todos',
+    badgeNew: 'Nuevo',
+    badgeMostViewed: 'Más visto',
+    badgeMostSaved: 'Más guardado',
+
     // Footer
     allRightsReserved: 'Todos los derechos reservados',
   },
@@ -177,6 +183,12 @@ export const translations = {
     averagePrice: 'Average price',
     totalProperties: 'properties',
 
+    // Carousel & badges
+    exploreAll: 'Explore all',
+    badgeNew: 'New',
+    badgeMostViewed: 'Most viewed',
+    badgeMostSaved: 'Most saved',
+
     // Footer
     allRightsReserved: 'All rights reserved',
   },
@@ -237,6 +249,12 @@ export const translations = {
     marketStats: 'Статистика рынка',
     averagePrice: 'Средняя цена',
     totalProperties: 'объектов',
+
+    // Carousel & badges
+    exploreAll: 'Смотреть все',
+    badgeNew: 'Новый',
+    badgeMostViewed: 'Популярный',
+    badgeMostSaved: 'Часто сохраняют',
 
     // Footer
     allRightsReserved: 'Все права защищены',

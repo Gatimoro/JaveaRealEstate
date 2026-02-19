@@ -20,7 +20,7 @@
 import { Bed, Bath, Maximize, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Property } from '@/data/properties';
 import type { PropertyCard as PropertyCardType } from '@/lib/supabase/server-queries';
 import { useLanguage, getPropertyTitle, getLocalizedField, translations } from '@/lib/i18n';
@@ -30,6 +30,73 @@ import SavePropertyButton from './SavePropertyButton';
 interface PropertyCardProps {
   property: Property | PropertyCardType; // Accept both full and minimal property data
   fullWidthMobile?: boolean;
+}
+
+// Badge key → i18n key mapping
+const badgeI18nMap: Record<string, keyof typeof translations['es']> = {
+  new: 'badgeNew',
+  most_viewed: 'badgeMostViewed',
+  most_saved: 'badgeMostSaved',
+};
+
+/** Swipeable image slider for mobile, lazy-loads extras beyond thumbnail */
+function ImageSlider({ images, title }: { images: string[]; title: string }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [loadedUpTo, setLoadedUpTo] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const index = Math.round(el.scrollLeft / el.clientWidth);
+    if (index !== activeIndex) {
+      setActiveIndex(index);
+      if (index > loadedUpTo) setLoadedUpTo(index);
+    }
+  }
+
+  return (
+    <div className="relative w-full h-full">
+      {/* Slides */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hidden w-full h-full"
+      >
+        {images.map((src, i) => (
+          <div key={i} className="flex-none w-full h-full relative snap-start">
+            {i <= loadedUpTo + 1 ? (
+              <Image
+                src={src}
+                alt={`${title} - ${i + 1}`}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover"
+                loading={i === 0 ? 'eager' : 'lazy'}
+                quality={85}
+              />
+            ) : (
+              <div className="w-full h-full bg-muted" />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Dot indicators */}
+      {images.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 pointer-events-none">
+          {images.map((_, i) => (
+            <div
+              key={i}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                i === activeIndex ? 'bg-white scale-125' : 'bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function PropertyCard({ property, fullWidthMobile = true }: PropertyCardProps) {
@@ -71,14 +138,24 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
   const visibleFeatures = showAllTags ? features : features.slice(0, maxVisibleTags);
   const hasMoreTags = features.length > maxVisibleTags;
 
+  const images = property.images ?? [];
+  const hasMultipleImages = images.length > 1;
+
+  // Localized badge text
+  const badgeText = property.badge
+    ? (t[badgeI18nMap[property.badge] as keyof typeof t] as string | undefined ?? property.badge)
+    : null;
+
   return (
     <div className={`group bg-card border border-border rounded-lg overflow-hidden hover:border-primary transition-all duration-300 hover-glow ${fullWidthMobile ? 'w-full' : 'w-full max-w-md'}`}>
       <Link href={`/propiedad/${property.id}`}>
         {/* Image with price overlay - Optimized with next/image */}
         <div className="relative h-48 sm:h-56 overflow-hidden bg-muted">
-          {property.images?.[0] ? (
+          {hasMultipleImages ? (
+            <ImageSlider images={images} title={title} />
+          ) : images[0] ? (
             <Image
-              src={property.images[0]}
+              src={images[0]}
               alt={title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -93,19 +170,19 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
           )}
 
           {/* Badge */}
-          {property.badge && (
-            <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs sm:text-sm font-semibold rounded-full">
-              {property.badge}
+          {badgeText && (
+            <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs sm:text-sm font-semibold rounded-full z-10">
+              {badgeText}
             </div>
           )}
 
           {/* Save button */}
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-3 right-3 z-10">
             <SavePropertyButton propertyId={property.id} />
           </div>
 
           {/* Price overlay at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-10">
             <div className="text-white">
               <div className="text-xl sm:text-2xl font-bold">
                 {formatPrice(property.price, locale)}

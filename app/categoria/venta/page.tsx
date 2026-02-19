@@ -57,7 +57,7 @@ export default async function SalePage({
     console.error('Error loading properties:', error);
     // Fallback to static data
     result.data = fallbackProperties.filter(p =>
-      ['house', 'plot', 'investment'].includes(p.type)
+      ['house', 'apartment', 'plot', 'investment'].includes(p.type)
     ).slice(0, ITEMS_PER_PAGE);
     result.pagination.totalCount = result.data.length;
   }

@@ -168,8 +168,8 @@ export default function SearchContent({ allProperties }: SearchContentProps) {
       const matchesSize =
         filters.minSize === '' || property.specs.size >= Number(filters.minSize);
 
-      // Type filter
-      const matchesType = filters.type === 'all' || property.type === filters.type;
+      // Type filter - DB properties use sub_category; static fallback uses type
+      const matchesType = filters.type === 'all' || (property.sub_category || property.type) === filters.type;
 
       return (
         matchesQuery &&
@@ -206,8 +206,10 @@ export default function SearchContent({ allProperties }: SearchContentProps) {
   };
 
   const renderPropertyCard = (property: Property) => {
-    switch (property.type) {
+    const propertyType = property.sub_category || property.type;
+    switch (propertyType) {
       case 'investment':
+      case 'commerce':
         return <InvestmentCard key={property.id} property={property} />;
       case 'plot':
         return <PlotCard key={property.id} property={property} />;
