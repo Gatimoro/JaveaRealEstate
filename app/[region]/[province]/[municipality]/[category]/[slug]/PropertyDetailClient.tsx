@@ -21,6 +21,7 @@ import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
 import { formatPrice } from '@/lib/utils';
+import { getPropertyHref } from '@/lib/seo';
 import SavePropertyButton from '@/components/SavePropertyButton';
 
 interface PropertyDetailClientProps {
@@ -33,6 +34,24 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
+
+  // Track unique view — fires once on mount, fire-and-forget via sendBeacon
+  useEffect(() => {
+    let sessionId = localStorage.getItem('vid');
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem('vid', sessionId);
+    }
+
+    const payload = JSON.stringify({ propertyId: property.id, sessionId });
+    const blob = new Blob([payload], { type: 'application/json' });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/track-view', blob);
+    } else {
+      fetch('/api/track-view', { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch all properties for recommendations
   useEffect(() => {
@@ -78,6 +97,8 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
       at: 'a',
       bigger: 'más grande',
       cheaper: 'más económico',
+      perWeek: 'semana',
+      perMonth: 'mes',
     },
     en: {
       back: 'Back',
@@ -107,6 +128,8 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
       at: 'at',
       bigger: 'larger',
       cheaper: 'more affordable',
+      perWeek: 'week',
+      perMonth: 'month',
     },
     ru: {
       back: 'Назад',
@@ -136,6 +159,8 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
       at: 'на расстоянии',
       bigger: 'больше',
       cheaper: 'дешевле',
+      perWeek: 'неделю',
+      perMonth: 'месяц',
     },
   };
 
@@ -170,20 +195,19 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
     return R * c; // Distance in km
   };
 
-  // Helper: Normalize type (treat house and apartment as the same)
-  const normalizeType = (type: string) => {
-    if (type === 'house' || type === 'apartment') return 'house';
-    return type;
+  // Helper: Normalize sub_category (treat house and apartment as the same for recommendations)
+  const normalizeSubCategory = (sub: string | undefined) => {
+    if (sub === 'house' || sub === 'apartment') return 'residential';
+    return sub ?? '';
   };
 
-  // 1. Similar nearby properties (same type, nearby location or same neighborhood)
+  // 1. Similar nearby properties (same sub_category, nearby location or same neighborhood)
   const getSimilarNearbyProperties = () => {
-    const currentType = normalizeType(property.type);
+    const currentType = normalizeSubCategory(property.sub_category);
 
     const filtered = allProperties.filter((p) => {
       if (p.id === property.id) return false;
-      // Match normalized type
-      if (normalizeType(p.type) !== currentType) return false;
+      if (normalizeSubCategory(p.sub_category) !== currentType) return false;
       return true;
     });
 
@@ -229,7 +253,7 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
     return (
       <Link
         key={prop.id}
-        href={`/propiedad/${prop.id}`}
+        href={getPropertyHref(prop)}
         className="group w-full max-w-md md:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
       >
         <div className="relative h-48 overflow-hidden">
@@ -384,8 +408,15 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
                 <MapPin className="w-5 h-5 mr-2" />
                 <span>{property.municipality || property.location}</span>
               </div>
-              <div className="text-4xl font-bold gradient-text">
-                {formatPrice(property.price, locale)}
+              <div className="flex items-baseline gap-2">
+                <div className="text-4xl font-bold gradient-text">
+                  {formatPrice(property.price, locale)}
+                </div>
+                {property.listing_type === 'rent' && property.rent_period && (
+                  <span className="text-lg text-muted-foreground">
+                    /{property.rent_period === 'week' ? t.perWeek : t.perMonth}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -448,9 +479,9 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
             <div className="bg-card border border-border rounded-xl p-6 space-y-4 sticky top-8">
               <h3 className="text-xl font-bold">{t.contactInfo}</h3>
 
-              {property.sourceUrl && (
+              {property.source_url && (
                 <a
-                  href={property.sourceUrl}
+                  href={property.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"

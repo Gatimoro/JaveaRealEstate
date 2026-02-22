@@ -50,6 +50,10 @@ export type PropertyCard = {
   };
   listing_type?: 'sale' | 'rent' | 'new-building';
   sub_category?: 'apartment' | 'house' | 'commerce' | 'plot';
+  rent_period?: 'week' | 'month';
+  region?: string;
+  province?: string;
+  municipality?: string;
   // Internal fields used for badge computation (stripped before returning from getFeaturedPropertiesForCards)
   views_count?: number;
   saves_count?: number;
@@ -170,7 +174,7 @@ export async function getFeaturedPropertiesForCards(
 
     // Fetch larger pool including metadata for badge computation
     const pool = await supabaseFetch<PropertyCard>('properties', {
-      select: 'id,title,price,location,images,badge,specs,listing_type,sub_category,views_count,saves_count,created_at',
+      select: 'id,title,price,location,region,province,municipality,images,badge,specs,listing_type,sub_category,rent_period,views_count,saves_count,created_at',
       listing_type: `eq.${listing_type}`,
       status: 'eq.available',
       order: 'created_at.desc',
@@ -265,164 +269,40 @@ export async function getProperties(useCache: boolean = true): Promise<Property[
 
 /**
  * Get a single property by ID - ALWAYS FRESH
+ * Joins the translations table to get localized title/description/features.
  */
 export async function getPropertyById(id: string): Promise<Property | null> {
   try {
-    const data = await supabaseFetch<Property>('properties', {
+    type PropertyWithTranslations = Property & {
+      translations?: Array<{
+        locale: string;
+        title: string | null;
+        description: string | null;
+        features: string[] | null;
+      }>;
+    };
+
+    const data = await supabaseFetch<PropertyWithTranslations>('properties', {
       id: `eq.${id}`,
-      select: '*',
+      select: '*,translations(locale,title,description,features)',
     });
-    return data[0] || null;
+
+    const property = data[0];
+    if (!property) return null;
+
+    // Flatten translations array into snake_case fields
+    if (property.translations) {
+      for (const t of property.translations) {
+        if (t.title)       (property as any)[`title_${t.locale}`]       = t.title;
+        if (t.description) (property as any)[`description_${t.locale}`] = t.description;
+        if (t.features)    (property as any)[`features_${t.locale}`]    = t.features;
+      }
+      delete (property as any).translations;
+    }
+
+    return property as Property;
   } catch (error) {
     console.error('Error fetching property:', error);
     return null;
-  }
-}
-
-/**
- * Get properties by type - ALWAYS FRESH
- */
-export async function getPropertiesByType(
-  type: 'house' | 'apartment' | 'investment' | 'plot'
-): Promise<Property[]> {
-  try {
-    const data = await supabaseFetch<Property>('properties', {
-      type: `eq.${type}`,
-      status: 'eq.available',
-      order: 'created_at.desc',
-      select: '*',
-    });
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching properties by type:', error);
-    throw error;
-  }
-}
-
-/**
- * Get hot properties (top 10 most viewed) - ALWAYS FRESH
- */
-export async function getHotProperties(): Promise<Property[]> {
-  try {
-    const data = await supabaseFetch<Property>('properties', {
-      status: 'eq.available',
-      order: 'views_count.desc',
-      limit: '10',
-      select: '*',
-    });
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching hot properties:', error);
-    throw error;
-  }
-}
-
-/**
- * Get new properties (less than 2 weeks old) - ALWAYS FRESH
- */
-export async function getNewProperties(): Promise<Property[]> {
-  try {
-    const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-    const data = await supabaseFetch<Property>('properties', {
-      status: 'eq.available',
-      created_at: `gt.${twoWeeksAgo.toISOString()}`,
-      order: 'created_at.desc',
-      select: '*',
-    });
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching new properties:', error);
-    throw error;
-  }
-}
-
-/**
- * Get most liked properties (top 10 most saved) - ALWAYS FRESH
- */
-export async function getMostLikedProperties(): Promise<Property[]> {
-  try {
-    const data = await supabaseFetch<Property>('properties', {
-      status: 'eq.available',
-      order: 'saves_count.desc',
-      limit: '10',
-      select: '*',
-    });
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching most liked properties:', error);
-    throw error;
-  }
-}
-
-/**
- * Search properties by price range - ALWAYS FRESH
- */
-export async function searchPropertiesByPrice(
-  minPrice: number,
-  maxPrice: number
-): Promise<Property[]> {
-  try {
-    const url = new URL(`${SUPABASE_URL}/rest/v1/properties`);
-    url.searchParams.append('status', 'eq.available');
-    url.searchParams.append('price', `gte.${minPrice}`);
-    url.searchParams.append('price', `lte.${maxPrice}`);
-    url.searchParams.append('order', 'price.asc');
-    url.searchParams.append('select', '*');
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      cache: 'no-store', // ALWAYS fresh
-    });
-
-    if (!response.ok) {
-      throw new Error(`Supabase fetch failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data || [];
-  } catch (error) {
-    console.error('Error searching properties by price:', error);
-    throw error;
-  }
-}
-
-/**
- * Get property badges (hot, new, most-liked) - ALWAYS FRESH
- */
-export async function getPropertyBadges(): Promise<Record<string, string>> {
-  const badges: Record<string, string> = {};
-
-  try {
-    const [hotProps, newProps, likedProps] = await Promise.all([
-      getHotProperties(),
-      getNewProperties(),
-      getMostLikedProperties(),
-    ]);
-
-    hotProps.forEach(p => {
-      badges[p.id] = 'hot';
-    });
-
-    newProps.forEach(p => {
-      if (!badges[p.id]) {
-        badges[p.id] = 'new';
-      }
-    });
-
-    likedProps.forEach(p => {
-      if (!badges[p.id]) {
-        badges[p.id] = 'most-liked';
-      }
-    });
-
-    return badges;
-  } catch (error) {
-    console.error('Error getting property badges:', error);
-    return {};
   }
 }

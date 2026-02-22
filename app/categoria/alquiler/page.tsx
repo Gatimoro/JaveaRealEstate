@@ -68,7 +68,6 @@ export default async function RentPage({
         </div>
       }>
         <CategoryPage
-          title="Propiedades en alquiler"
           properties={result.data}
           categoryType="rent"
           pagination={result.pagination}

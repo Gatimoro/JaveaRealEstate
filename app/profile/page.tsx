@@ -125,8 +125,8 @@ export default function ProfilePage() {
   const savedPropertiesList = allProperties.filter(p => savedProperties.includes(p.id));
 
   const renderPropertyCard = (property: Property) => {
-    switch (property.type) {
-      case 'investment':
+    switch (property.sub_category) {
+      case 'commerce':
         return <InvestmentCard key={property.id} property={property} />;
       case 'plot':
         return <PlotCard key={property.id} property={property} />;

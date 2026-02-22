@@ -9,6 +9,7 @@ import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
 import { formatPrice } from '@/lib/utils';
+import { getPropertyHref } from '@/lib/seo';
 
 export default function PropertyDetailPage() {
   const params = useParams();
@@ -47,6 +48,26 @@ export default function PropertyDetailPage() {
     loadProperty();
   }, [id]);
 
+  // Track unique view — fires once after property is known, fire-and-forget via sendBeacon
+  useEffect(() => {
+    if (!property) return;
+
+    let sessionId = localStorage.getItem('vid');
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem('vid', sessionId);
+    }
+
+    const payload = JSON.stringify({ propertyId: property.id, sessionId });
+    const blob = new Blob([payload], { type: 'application/json' });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/track-view', blob);
+    } else {
+      fetch('/api/track-view', { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(() => {});
+    }
+  }, [property?.id]);
+
   // Fetch all properties for recommendations
   useEffect(() => {
     async function loadAllProperties() {
@@ -68,6 +89,8 @@ export default function PropertyDetailPage() {
       notFound: 'Propiedad no encontrada',
       backToHome: 'Volver al inicio',
       back: 'Volver',
+      perWeek: 'semana',
+      perMonth: 'mes',
       image: 'imagen',
       bedrooms: 'habitaciones',
       bathrooms: 'baños',
@@ -99,6 +122,8 @@ export default function PropertyDetailPage() {
       notFound: 'Property not found',
       backToHome: 'Back to home',
       back: 'Back',
+      perWeek: 'week',
+      perMonth: 'month',
       image: 'image',
       bedrooms: 'bedrooms',
       bathrooms: 'bathrooms',
@@ -130,6 +155,8 @@ export default function PropertyDetailPage() {
       notFound: 'Объект не найден',
       backToHome: 'Вернуться на главную',
       back: 'Назад',
+      perWeek: 'неделю',
+      perMonth: 'месяц',
       image: 'изображение',
       bedrooms: 'спален',
       bathrooms: 'ванных',
@@ -217,20 +244,19 @@ export default function PropertyDetailPage() {
     return R * c; // Distance in km
   };
 
-  // Helper: Normalize type (treat house and apartment as the same)
-  const normalizeType = (type: string) => {
-    if (type === 'house' || type === 'apartment') return 'house';
-    return type;
+  // Helper: Normalize sub_category (treat house and apartment as the same for recommendations)
+  const normalizeSubCategory = (sub: string | undefined) => {
+    if (sub === 'house' || sub === 'apartment') return 'residential';
+    return sub ?? '';
   };
 
-  // 1. Similar nearby properties (same type, nearby location or same neighborhood)
+  // 1. Similar nearby properties (same sub_category, nearby location or same neighborhood)
   const getSimilarNearbyProperties = () => {
-    const currentType = normalizeType(property.type);
+    const currentType = normalizeSubCategory(property.sub_category);
 
     const filtered = allProperties.filter((p) => {
       if (p.id === property.id) return false;
-      // Match normalized type
-      if (normalizeType(p.type) !== currentType) return false;
+      if (normalizeSubCategory(p.sub_category) !== currentType) return false;
       return true;
     });
 
@@ -268,24 +294,23 @@ export default function PropertyDetailPage() {
       .slice(0, 4);
   };
 
-  // 2. Bigger properties (more square meters) - NOT for investments
+  // 2. Bigger properties (more square meters) - NOT for commerce
   const getBiggerProperties = () => {
-    if (property.type === 'investment') return [];
+    if (property.sub_category === 'commerce') return [];
 
-    const currentSize = property.specs.size || 0;
-    const currentType = normalizeType(property.type);
+    const currentSize = property.specs.size ?? 0;
+    const currentType = normalizeSubCategory(property.sub_category);
 
     return allProperties
       .filter((p) => {
         if (p.id === property.id) return false;
-        if (normalizeType(p.type) !== currentType) return false;
-        const pSize = p.specs.size || 0;
+        if (normalizeSubCategory(p.sub_category) !== currentType) return false;
+        const pSize = p.specs.size ?? 0;
         return pSize > currentSize;
       })
       .sort((a, b) => {
-        const aSize = a.specs.size || 0;
-        const bSize = b.specs.size || 0;
-        // Sort by closest bigger size
+        const aSize = a.specs.size ?? 0;
+        const bSize = b.specs.size ?? 0;
         return Math.abs(aSize - currentSize) - Math.abs(bSize - currentSize);
       })
       .slice(0, 4);
@@ -294,34 +319,31 @@ export default function PropertyDetailPage() {
   // 3. Cheaper properties (next cheapest, semi-random selection)
   const getCheaperProperties = () => {
     const currentPrice = property.price;
-    const currentType = normalizeType(property.type);
+    const currentType = normalizeSubCategory(property.sub_category);
 
-    // Get all cheaper properties of same type
     const cheaper = allProperties
       .filter((p) => {
         if (p.id === property.id) return false;
-        if (normalizeType(p.type) !== currentType) return false;
+        if (normalizeSubCategory(p.sub_category) !== currentType) return false;
         return p.price < currentPrice;
       })
-      .sort((a, b) => b.price - a.price); // Sort descending (closest cheaper first)
+      .sort((a, b) => b.price - a.price);
 
-    // Semi-random selection: take top 8 closest cheaper, then randomly pick 4
     const candidates = cheaper.slice(0, 8);
     if (candidates.length <= 4) return candidates;
 
-    // Shuffle and take 4
     const shuffled = candidates.sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 4);
   };
 
-  // 4. Other investment opportunities (for investments only)
+  // 4. Other commerce/investment opportunities (for commerce only)
   const getOtherInvestments = () => {
-    if (property.type !== 'investment') return [];
+    if (property.sub_category !== 'commerce') return [];
 
     return allProperties
       .filter((p) => {
         if (p.id === property.id) return false;
-        return p.type === 'investment';
+        return p.sub_category === 'commerce';
       })
       .map((p) => ({
         ...p,
@@ -349,7 +371,7 @@ export default function PropertyDetailPage() {
     return (
       <Link
         key={prop.id}
-        href={`/propiedad/${prop.id}`}
+        href={getPropertyHref(prop)}
         className="group w-full max-w-md md:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
       >
         <div className="relative h-48 overflow-hidden">
@@ -489,8 +511,15 @@ export default function PropertyDetailPage() {
                 <MapPin className="w-5 h-5 mr-2" />
                 <span>{property.location}</span>
               </div>
-              <div className="text-4xl font-bold gradient-text">
-                {formatPrice(property.price, locale)}
+              <div className="flex items-baseline gap-2">
+                <div className="text-4xl font-bold gradient-text">
+                  {formatPrice(property.price, locale)}
+                </div>
+                {property.listing_type === 'rent' && property.rent_period && (
+                  <span className="text-lg text-muted-foreground">
+                    /{property.rent_period === 'week' ? t.perWeek : t.perMonth}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -557,9 +586,9 @@ export default function PropertyDetailPage() {
             <div className="bg-card border border-border rounded-xl p-6 space-y-4 sticky top-8">
               <h3 className="text-xl font-bold">{t.contactInfo}</h3>
 
-              {property.sourceUrl && (
+              {property.source_url && (
                 <a
-                  href={property.sourceUrl}
+                  href={property.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
@@ -578,7 +607,7 @@ export default function PropertyDetailPage() {
                 </button>
               </div>
 
-              {property.type === 'investment' && property.specs.roi && (
+              {property.sub_category === 'commerce' && property.specs.roi && (
                 <div className="pt-4 border-t border-border">
                   <h4 className="font-semibold mb-2">{t.investment}</h4>
                   <div className="space-y-2 text-sm text-muted">
@@ -630,7 +659,7 @@ export default function PropertyDetailPage() {
           )}
 
           {/* Bigger Properties (NOT for investments) */}
-          {biggerProperties.length > 0 && property.type !== 'investment' && (
+          {biggerProperties.length > 0 && property.sub_category !== 'commerce' && (
             <div className="pt-8 border-t border-border">
               <h2 className="text-3xl font-bold mb-6">{t.biggerProperties}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -654,7 +683,7 @@ export default function PropertyDetailPage() {
           )}
 
           {/* Other Investment Opportunities (for investments only) */}
-          {otherInvestments.length > 0 && property.type === 'investment' && (
+          {otherInvestments.length > 0 && property.sub_category === 'commerce' && (
             <div className="pt-8 border-t border-border">
               <h2 className="text-3xl font-bold mb-6">{t.otherInvestments}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

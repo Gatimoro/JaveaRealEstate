@@ -2,23 +2,64 @@ import { Suspense } from 'react';
 import CategoryNav from '@/components/CategoryNav';
 import Footer from '@/components/Footer';
 import SearchContent from '@/components/SearchContent';
-import { getProperties } from '@/lib/supabase/server-queries';
-import { allProperties as fallbackProperties } from '@/data/properties';
+import { getPropertiesPaginated } from '@/lib/supabase/queries';
+import { ITEMS_PER_PAGE } from '@/lib/types';
 import type { Property } from '@/data/properties';
 
 /**
- * Search Page - Server Component with normal caching
+ * Search Page — server-side filtering via URL params.
+ * Dynamic (not cached) since every search query is unique.
  */
-export default async function SearchPage() {
-  // Fetch all properties on the server (with default Next.js caching)
-  let properties: Property[] = [];
+export const dynamic = 'force-dynamic';
+
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: {
+    q?: string;
+    type?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    bedrooms?: string;
+    page?: string;
+    sortBy?: string;
+  };
+}) {
+  const page = parseInt(searchParams.page || '1');
+  const search = searchParams.q || undefined;
+  const subCategory = searchParams.type as 'apartment' | 'house' | 'commerce' | 'plot' | undefined;
+  const minPrice = searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined;
+  const maxPrice = searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined;
+  const minBedrooms = searchParams.bedrooms ? parseInt(searchParams.bedrooms) : undefined;
+  const sortBy = (searchParams.sortBy || 'date-desc') as 'price-asc' | 'price-desc' | 'date-desc' | 'date-asc';
+
+  let result = {
+    data: [] as Property[],
+    pagination: {
+      page: 1,
+      pageSize: ITEMS_PER_PAGE,
+      totalCount: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+  };
 
   try {
-    properties = await getProperties();
+    result = await getPropertiesPaginated({
+      page,
+      pageSize: ITEMS_PER_PAGE,
+      filters: {
+        search,
+        subCategory,
+        minPrice,
+        maxPrice,
+        minBedrooms,
+      },
+      sortBy,
+    });
   } catch (error) {
-    console.error('Error loading properties from Supabase:', error);
-    // Fallback to static data
-    properties = fallbackProperties;
+    console.error('Error loading search results:', error);
   }
 
   return (
@@ -30,7 +71,7 @@ export default async function SearchPage() {
           <p className="mt-4 text-muted-foreground">Cargando propiedades...</p>
         </div>
       }>
-        <SearchContent allProperties={properties} />
+        <SearchContent properties={result.data} pagination={result.pagination} />
       </Suspense>
       <Footer />
     </div>

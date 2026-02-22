@@ -4,6 +4,7 @@ import { Maximize, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, formatPrice, translations } from '@/lib/i18n';
+import { getPropertyHref } from '@/lib/seo';
 import SavePropertyButton from './SavePropertyButton';
 
 interface PlotCardProps {
@@ -16,7 +17,7 @@ export default function PlotCard({ property }: PlotCardProps) {
   const title = getPropertyTitle(property, locale);
 
   return (
-    <Link href={`/propiedad/${property.id}`} className="group w-full max-w-md sm:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
+    <Link href={getPropertyHref(property)} className="group w-full max-w-md sm:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img

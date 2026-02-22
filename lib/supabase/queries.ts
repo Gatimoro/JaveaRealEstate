@@ -8,7 +8,8 @@ import { createClient } from '@/lib/supabase/client';
 import type { Property } from '@/data/properties';
 
 /**
- * Get all available properties from Supabase
+ * Get all available properties (used by client components for recommendations)
+ * Note: Supabase JS SDK returns up to 1000 rows by default.
  */
 export async function getProperties(): Promise<Property[]> {
   const supabase = createClient();
@@ -28,7 +29,7 @@ export async function getProperties(): Promise<Property[]> {
 }
 
 /**
- * Get a single property by ID
+ * Get a single property by ID (client-side, no translation join)
  */
 export async function getPropertyById(id: string): Promise<Property | null> {
   const supabase = createClient();
@@ -45,156 +46,6 @@ export async function getPropertyById(id: string): Promise<Property | null> {
   }
 
   return data as Property;
-}
-
-/**
- * Get properties by type
- */
-export async function getPropertiesByType(type: 'house' | 'apartment' | 'investment' | 'plot'): Promise<Property[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('type', type)
-    .eq('status', 'available')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching properties by type:', error);
-    throw error;
-  }
-
-  return (data || []) as Property[];
-}
-
-/**
- * Get hot properties (top 10 most viewed)
- */
-export async function getHotProperties(): Promise<Property[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('status', 'available')
-    .order('views_count', { ascending: false })
-    .limit(10);
-
-  if (error) {
-    console.error('Error fetching hot properties:', error);
-    throw error;
-  }
-
-  return (data || []) as Property[];
-}
-
-/**
- * Get new properties (less than 2 weeks old)
- */
-export async function getNewProperties(): Promise<Property[]> {
-  const supabase = createClient();
-
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('status', 'available')
-    .gt('created_at', twoWeeksAgo.toISOString())
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching new properties:', error);
-    throw error;
-  }
-
-  return (data || []) as Property[];
-}
-
-/**
- * Get most liked properties (top 10 most saved)
- */
-export async function getMostLikedProperties(): Promise<Property[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('status', 'available')
-    .order('saves_count', { ascending: false })
-    .limit(10);
-
-  if (error) {
-    console.error('Error fetching most liked properties:', error);
-    throw error;
-  }
-
-  return (data || []) as Property[];
-}
-
-/**
- * Search properties by price range
- */
-export async function searchPropertiesByPrice(
-  minPrice: number,
-  maxPrice: number
-): Promise<Property[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('status', 'available')
-    .gte('price', minPrice)
-    .lte('price', maxPrice)
-    .order('price', { ascending: true });
-
-  if (error) {
-    console.error('Error searching properties by price:', error);
-    throw error;
-  }
-
-  return (data || []) as Property[];
-}
-
-/**
- * Get property badges (hot, new, most-liked)
- */
-export async function getPropertyBadges(): Promise<Record<string, string>> {
-  const badges: Record<string, string> = {};
-
-  try {
-    // Get all three categories in parallel
-    const [hotProps, newProps, likedProps] = await Promise.all([
-      getHotProperties(),
-      getNewProperties(),
-      getMostLikedProperties(),
-    ]);
-
-    // Priority: hot > new > most-liked
-    hotProps.forEach(p => {
-      badges[p.id] = 'hot';
-    });
-
-    newProps.forEach(p => {
-      if (!badges[p.id]) {
-        badges[p.id] = 'new';
-      }
-    });
-
-    likedProps.forEach(p => {
-      if (!badges[p.id]) {
-        badges[p.id] = 'most-liked';
-      }
-    });
-
-    return badges;
-  } catch (error) {
-    console.error('Error getting property badges:', error);
-    return {};
-  }
 }
 
 /**
@@ -222,8 +73,6 @@ export async function getPropertiesPaginated(options: {
     minBedrooms?: number;
     maxBedrooms?: number;
     minBathrooms?: number;
-    minSize?: number;
-    maxSize?: number;
     location?: string;
     region?: string;
     province?: string;
@@ -273,24 +122,20 @@ export async function getPropertiesPaginated(options: {
   }
 
   if (filters.minBedrooms !== undefined) {
-    query = query.gte('specs->bedrooms', filters.minBedrooms);
+    // DB stores bedrooms as JSON string "3" — use text extraction (->>) for numeric string comparison
+    query = query.gte('specs->>bedrooms', String(filters.minBedrooms));
   }
 
   if (filters.maxBedrooms !== undefined) {
-    query = query.lte('specs->bedrooms', filters.maxBedrooms);
+    query = query.lte('specs->>bedrooms', String(filters.maxBedrooms));
   }
 
   if (filters.minBathrooms !== undefined) {
-    query = query.gte('specs->bathrooms', filters.minBathrooms);
+    query = query.gte('specs->>bathrooms', String(filters.minBathrooms));
   }
 
-  if (filters.minSize !== undefined) {
-    query = query.gte('specs->size', filters.minSize);
-  }
-
-  if (filters.maxSize !== undefined) {
-    query = query.lte('specs->size', filters.maxSize);
-  }
+  // Note: minSize/maxSize filters removed — DB stores area as "146.6 m2" string,
+  // making numeric comparisons impossible without a DB migration.
 
   if (filters.region) {
     query = query.eq('region', filters.region);

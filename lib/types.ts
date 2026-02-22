@@ -4,8 +4,6 @@
  * Central location for reusable types across the application.
  */
 
-import type { Property } from '@/data/properties';
-
 /**
  * Pagination Constants
  */
@@ -23,8 +21,6 @@ export interface PropertyFilters {
   minBedrooms?: number;
   maxBedrooms?: number;
   minBathrooms?: number;
-  minSize?: number;
-  maxSize?: number;
   location?: string;
   region?: string;
   province?: string;
@@ -58,45 +54,3 @@ export type SortOption =
   | 'size-desc'
   | 'size-asc';
 
-/**
- * Property Card Type (Minimal data for list views)
- * ~500 bytes vs 5KB for full Property
- */
-export interface PropertyCard {
-  id: string;
-  title: string;
-  price: number;
-  location: string;
-  images: string[]; // Only first image needed for card
-  badge?: string;
-  listing_type?: 'sale' | 'rent' | 'new-building';
-  sub_category?: 'apartment' | 'house' | 'commerce' | 'plot';
-  specs: {
-    bedrooms?: number;
-    bathrooms?: number;
-    size: number;
-  };
-  region?: string;
-  province?: string;
-  municipality?: string;
-}
-
-/**
- * Convert full Property to PropertyCard
- */
-export function toPropertyCard(property: Property): PropertyCard {
-  return {
-    id: property.id,
-    title: property.title,
-    price: property.price,
-    location: property.location,
-    images: property.images.slice(0, 1), // Only first image for cards
-    badge: property.badge,
-    listing_type: property.listing_type,
-    sub_category: property.sub_category,
-    specs: property.specs,
-    region: property.region,
-    province: property.province,
-    municipality: property.municipality,
-  };
-}

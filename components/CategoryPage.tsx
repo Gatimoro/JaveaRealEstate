@@ -9,7 +9,6 @@ import type { Property } from '@/data/properties';
 import { Building2, Home as HomeIcon, Key, MapPin, Search, SlidersHorizontal, X, ChevronDown, ArrowUpDown } from 'lucide-react';
 
 interface CategoryPageProps {
-  title: string;
   properties: Property[];
   categoryType: 'new-building' | 'sale' | 'rent';
   pagination?: {
@@ -25,6 +24,9 @@ interface CategoryPageProps {
 // Translations
 const translations = {
   es: {
+    titleSale: 'Propiedades en venta',
+    titleRent: 'Propiedades en alquiler',
+    titleNew: 'Obra nueva',
     allProjects: 'Todos los proyectos',
     all: 'Todas',
     apartments: 'Apartamentos',
@@ -52,6 +54,9 @@ const translations = {
     sortSizeAsc: 'Tamaño: menor a mayor',
   },
   en: {
+    titleSale: 'Properties for sale',
+    titleRent: 'Properties for rent',
+    titleNew: 'New builds',
     allProjects: 'All projects',
     all: 'All',
     apartments: 'Apartments',
@@ -79,6 +84,9 @@ const translations = {
     sortSizeAsc: 'Size: small to large',
   },
   ru: {
+    titleSale: 'Недвижимость на продажу',
+    titleRent: 'Недвижимость в аренду',
+    titleNew: 'Новостройки',
     allProjects: 'Все проекты',
     all: 'Все',
     apartments: 'Квартиры',
@@ -107,11 +115,17 @@ const translations = {
   },
 };
 
-export default function CategoryPage({ title, properties, categoryType, pagination }: CategoryPageProps) {
+export default function CategoryPage({ properties, categoryType, pagination }: CategoryPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { locale } = useLanguage();
   const t = translations[locale];
+
+  const title = categoryType === 'sale'
+    ? t.titleSale
+    : categoryType === 'rent'
+    ? t.titleRent
+    : t.titleNew;
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
 

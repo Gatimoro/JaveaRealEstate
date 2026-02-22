@@ -63,10 +63,10 @@ export default function ListingStatistics({ properties, timestamp = new Date() }
 
   // Calculate statistics (memoized to avoid recalculation)
   const stats = useMemo(() => {
-    const houses = properties.filter(p => (p.sub_category || p.type) === 'house');
-    const apartments = properties.filter(p => (p.sub_category || p.type) === 'apartment');
-    const investments = properties.filter(p => (p.sub_category || p.type) === 'investment' || (p.sub_category || p.type) === 'commerce');
-    const plots = properties.filter(p => (p.sub_category || p.type) === 'plot');
+    const houses = properties.filter(p => p.sub_category === 'house');
+    const apartments = properties.filter(p => p.sub_category === 'apartment');
+    const investments = properties.filter(p => p.sub_category === 'commerce');
+    const plots = properties.filter(p => p.sub_category === 'plot');
 
     const calculateStats = (props: Property[]) => {
       if (props.length === 0) return { count: 0, avg: 0, min: 0, max: 0, total: 0 };

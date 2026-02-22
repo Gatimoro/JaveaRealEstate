@@ -68,7 +68,6 @@ export default async function NewBuildingsPage({
         </div>
       }>
         <CategoryPage
-          title="Obra nueva"
           properties={result.data}
           categoryType="new-building"
           pagination={result.pagination}

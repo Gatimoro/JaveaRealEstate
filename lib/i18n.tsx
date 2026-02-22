@@ -116,6 +116,10 @@ export const translations = {
     averagePrice: 'Precio promedio',
     totalProperties: 'propiedades',
 
+    // Rent period
+    perWeek: 'semana',
+    perMonth: 'mes',
+
     // Carousel & badges
     exploreAll: 'Explorar todos',
     badgeNew: 'Nuevo',
@@ -182,6 +186,10 @@ export const translations = {
     marketStats: 'Market Statistics',
     averagePrice: 'Average price',
     totalProperties: 'properties',
+
+    // Rent period
+    perWeek: 'week',
+    perMonth: 'month',
 
     // Carousel & badges
     exploreAll: 'Explore all',
@@ -250,6 +258,10 @@ export const translations = {
     averagePrice: 'Средняя цена',
     totalProperties: 'объектов',
 
+    // Rent period
+    perWeek: 'неделю',
+    perMonth: 'месяц',
+
     // Carousel & badges
     exploreAll: 'Смотреть все',
     badgeNew: 'Новый',
@@ -272,44 +284,15 @@ export function getLocalizedField<T extends Record<string, any>>(
   field: string,
   locale: Locale
 ): string {
-  // Try locale-specific field - check BOTH snake_case (DB) and camelCase (static)
-  const localeSuffix = locale.charAt(0).toUpperCase() + locale.slice(1);
-
-  // Check camelCase first (e.g., descriptionEn, titleRu)
-  const camelCaseKey = `${field}${localeSuffix}` as keyof T;
-  if (obj[camelCaseKey]) {
-    return obj[camelCaseKey] as string;
+  // For non-Spanish locales, try snake_case DB field first (e.g. description_en, title_ru)
+  if (locale !== 'es') {
+    const snakeCaseKey = `${field}_${locale}` as keyof T;
+    if (obj[snakeCaseKey]) {
+      return obj[snakeCaseKey] as string;
+    }
   }
 
-  // Check snake_case (e.g., description_en, title_ru) - from Supabase
-  const snakeCaseKey = `${field}_${locale}` as keyof T;
-  if (obj[snakeCaseKey]) {
-    return obj[snakeCaseKey] as string;
-  }
-
-  // Fallback to Spanish - check both formats
-  const esCamelKey = `${field}Es` as keyof T;
-  if (obj[esCamelKey]) {
-    return obj[esCamelKey] as string;
-  }
-
-  const esSnakeKey = `${field}_es` as keyof T;
-  if (obj[esSnakeKey]) {
-    return obj[esSnakeKey] as string;
-  }
-
-  // Fallback to English - check both formats
-  const enCamelKey = `${field}En` as keyof T;
-  if (obj[enCamelKey]) {
-    return obj[enCamelKey] as string;
-  }
-
-  const enSnakeKey = `${field}_en` as keyof T;
-  if (obj[enSnakeKey]) {
-    return obj[enSnakeKey] as string;
-  }
-
-  // Final fallback to base field
+  // Fallback to base field (Spanish for static data; English from scraper for DB properties)
   const baseKey = field as keyof T;
   if (obj[baseKey]) {
     return obj[baseKey] as string;
@@ -324,44 +307,15 @@ export function getLocalizedArray<T extends Record<string, any>>(
   field: string,
   locale: Locale
 ): string[] {
-  // Try locale-specific field - check BOTH snake_case (DB) and camelCase (static)
-  const localeSuffix = locale.charAt(0).toUpperCase() + locale.slice(1);
-
-  // Check camelCase first (e.g., featuresEn, featuresRu)
-  const camelCaseKey = `${field}${localeSuffix}` as keyof T;
-  if (obj[camelCaseKey] && Array.isArray(obj[camelCaseKey])) {
-    return obj[camelCaseKey] as string[];
+  // For non-Spanish locales, try snake_case DB field first (e.g. features_en, features_ru)
+  if (locale !== 'es') {
+    const snakeCaseKey = `${field}_${locale}` as keyof T;
+    if (obj[snakeCaseKey] && Array.isArray(obj[snakeCaseKey])) {
+      return obj[snakeCaseKey] as string[];
+    }
   }
 
-  // Check snake_case (e.g., features_en, features_ru) - from Supabase
-  const snakeCaseKey = `${field}_${locale}` as keyof T;
-  if (obj[snakeCaseKey] && Array.isArray(obj[snakeCaseKey])) {
-    return obj[snakeCaseKey] as string[];
-  }
-
-  // Fallback to Spanish - check both formats
-  const esCamelKey = `${field}Es` as keyof T;
-  if (obj[esCamelKey] && Array.isArray(obj[esCamelKey])) {
-    return obj[esCamelKey] as string[];
-  }
-
-  const esSnakeKey = `${field}_es` as keyof T;
-  if (obj[esSnakeKey] && Array.isArray(obj[esSnakeKey])) {
-    return obj[esSnakeKey] as string[];
-  }
-
-  // Fallback to English - check both formats
-  const enCamelKey = `${field}En` as keyof T;
-  if (obj[enCamelKey] && Array.isArray(obj[enCamelKey])) {
-    return obj[enCamelKey] as string[];
-  }
-
-  const enSnakeKey = `${field}_en` as keyof T;
-  if (obj[enSnakeKey] && Array.isArray(obj[enSnakeKey])) {
-    return obj[enSnakeKey] as string[];
-  }
-
-  // Final fallback to base field
+  // Fallback to base field
   const baseKey = field as keyof T;
   if (obj[baseKey] && Array.isArray(obj[baseKey])) {
     return obj[baseKey] as string[];
@@ -384,52 +338,20 @@ export const languageFlags: Record<Locale, string> = {
   ru: '🇷🇺',
 };
 
-// Get property title with intelligent fallback
+// Get property title with locale fallback
 export function getPropertyTitle(
   property: {
     title: string;
-    titleEn?: string;
-    titleEs?: string;
-    titleRu?: string;
     title_en?: string;
-    title_es?: string;
     title_ru?: string;
-    type?: 'house' | 'apartment' | 'investment' | 'plot'
   },
   locale: Locale
 ): string {
-  // Try to get translated title
-  const translatedTitle = getLocalizedField(property, 'title', locale);
-
-  // If we found a translated title, use it (even if it's the same as the original)
-  if (translatedTitle) {
-    return translatedTitle;
+  if (locale !== 'es') {
+    const localeKey = `title_${locale}` as 'title_en' | 'title_ru';
+    if (property[localeKey]) return property[localeKey]!;
   }
-
-  // If no translation found and locale is not Spanish, generate generic fallback
-  if (locale !== 'es' && property.type) {
-    const fallbacks = {
-      en: {
-        house: 'House',
-        apartment: 'Apartment',
-        investment: 'Investment Opportunity',
-        plot: 'Land Plot',
-      },
-      ru: {
-        house: 'Дом',
-        apartment: 'Квартира',
-        investment: 'Инвестиционная возможность',
-        plot: 'Участок',
-      },
-    };
-
-    const fallback = fallbacks[locale]?.[property.type];
-    if (fallback) {
-      return fallback;
-    }
-  }
-
-  // Final fallback to base title
+  // Base title (English from scraper for DB properties; Spanish for static fallback)
   return property.title;
 }
 

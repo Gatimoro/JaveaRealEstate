@@ -25,6 +25,7 @@ import type { Property } from '@/data/properties';
 import type { PropertyCard as PropertyCardType } from '@/lib/supabase/server-queries';
 import { useLanguage, getPropertyTitle, getLocalizedField, translations } from '@/lib/i18n';
 import { formatPrice, getPricePerSqm } from '@/lib/utils';
+import { getPropertyHref } from '@/lib/seo';
 import SavePropertyButton from './SavePropertyButton';
 
 interface PropertyCardProps {
@@ -126,8 +127,12 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
     ? (getLocalizedField(property as Property, 'description', locale) || '')
     : '';
 
+  const specsRooms = property.specs?.bedrooms;
+  const specsBaths = property.specs?.bathrooms;
+  const specsSize = property.specs?.size;
+
   // Calculate price per square meter using shared utility
-  const pricePerSqm = getPricePerSqm(property.price, property.specs?.size);
+  const pricePerSqm = getPricePerSqm(property.price, specsSize);
 
   // Features only available in full Property type
   const featuresRaw = 'features' in property
@@ -148,7 +153,7 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
 
   return (
     <div className={`group bg-card border border-border rounded-lg overflow-hidden hover:border-primary transition-all duration-300 hover-glow ${fullWidthMobile ? 'w-full' : 'w-full max-w-md'}`}>
-      <Link href={`/propiedad/${property.id}`}>
+      <Link href={getPropertyHref(property)}>
         {/* Image with price overlay - Optimized with next/image */}
         <div className="relative h-48 sm:h-56 overflow-hidden bg-muted">
           {hasMultipleImages ? (
@@ -184,8 +189,13 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
           {/* Price overlay at bottom */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-10">
             <div className="text-white">
-              <div className="text-xl sm:text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold flex items-baseline gap-1">
                 {formatPrice(property.price, locale)}
+                {property.listing_type === 'rent' && 'rent_period' in property && property.rent_period && (
+                  <span className="text-sm font-normal opacity-80">
+                    /{property.rent_period === 'week' ? t.perWeek : t.perMonth}
+                  </span>
+                )}
               </div>
               {pricePerSqm && (
                 <div className="text-xs sm:text-sm opacity-90">
@@ -210,22 +220,22 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
 
           {/* Mandatory specs */}
           <div className="flex items-center gap-4 text-sm text-foreground">
-            {property.specs?.bedrooms && (
+            {specsRooms && (
               <div className="flex items-center gap-1">
                 <Bed className="w-4 h-4 text-muted-foreground" />
-                <span>{property.specs.bedrooms}</span>
+                <span>{specsRooms}</span>
               </div>
             )}
-            {property.specs?.bathrooms && (
+            {specsBaths && (
               <div className="flex items-center gap-1">
                 <Bath className="w-4 h-4 text-muted-foreground" />
-                <span>{property.specs.bathrooms}</span>
+                <span>{specsBaths}</span>
               </div>
             )}
-            {property.specs?.size && (
+            {specsSize && (
               <div className="flex items-center gap-1">
                 <Maximize className="w-4 h-4 text-muted-foreground" />
-                <span>{property.specs.size}m²</span>
+                <span>{specsSize}m²</span>
               </div>
             )}
           </div>

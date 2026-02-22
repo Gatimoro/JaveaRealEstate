@@ -39,7 +39,6 @@ const mockProperty: Property = {
   municipality: 'Jávea',
   listing_type: 'sale',
   sub_category: 'house',
-  type: 'house',
   images: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
   specs: {
     bedrooms: 3,

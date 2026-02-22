@@ -3,7 +3,6 @@ import CategoryNav from '@/components/CategoryNav';
 import CategoryPage from '@/components/CategoryPage';
 import Footer from '@/components/Footer';
 import { getPropertiesPaginated } from '@/lib/supabase/queries';
-import { allProperties as fallbackProperties } from '@/data/properties';
 import { ITEMS_PER_PAGE } from '@/lib/types';
 import type { Property } from '@/data/properties';
 
@@ -55,11 +54,8 @@ export default async function SalePage({
     });
   } catch (error) {
     console.error('Error loading properties:', error);
-    // Fallback to static data
-    result.data = fallbackProperties.filter(p =>
-      ['house', 'apartment', 'plot', 'investment'].includes(p.type)
-    ).slice(0, ITEMS_PER_PAGE);
-    result.pagination.totalCount = result.data.length;
+    // Fallback to empty array (static data uses deprecated type field)
+    result.data = [];
   }
 
   return (
@@ -72,7 +68,6 @@ export default async function SalePage({
         </div>
       }>
         <CategoryPage
-          title="Propiedades en venta"
           properties={result.data}
           categoryType="sale"
           pagination={result.pagination}

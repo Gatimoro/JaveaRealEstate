@@ -40,6 +40,13 @@ export async function POST(request: Request) {
       revalidated.push('tag:properties (all property data)');
     }
 
+    // Always revalidate all category pages so ISR cache is cleared regardless of tag support
+    revalidatePath('/');
+    revalidatePath('/categoria/venta');
+    revalidatePath('/categoria/alquiler');
+    revalidatePath('/categoria/obra-nueva');
+    revalidatePath('/buscar');
+
     // Refresh materialized view (card_properties) via service role
     let viewRefreshed = false;
     if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {

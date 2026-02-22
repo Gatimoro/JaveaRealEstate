@@ -99,6 +99,40 @@ function slugify(text: string): string {
 }
 
 /**
+ * Generate a property href for use in links.
+ *
+ * Uses the full SEO URL when region/province/municipality are present,
+ * falls back to /propiedad/[id] when location hierarchy is incomplete.
+ *
+ * Accepts both full Property and minimal PropertyCard objects.
+ */
+export function getPropertyHref(property: {
+  id: string;
+  title: string;
+  listing_type?: string;
+  region?: string;
+  province?: string;
+  municipality?: string;
+  location: string;
+}): string {
+  if (property.region && property.province && property.municipality) {
+    const regionSlug = slugify(property.region);
+    const provinceSlug = slugify(property.province);
+    const municipalitySlug = slugify(property.municipality);
+    const categoryMap: Record<string, string> = {
+      sale: 'venta',
+      rent: 'alquiler',
+      'new-building': 'obra-nueva',
+    };
+    const categorySlug = categoryMap[property.listing_type || 'sale'] ?? 'venta';
+    const titleSlug = slugify(property.title).slice(0, 50);
+    const propertySlug = `${titleSlug}-${property.id}`;
+    return `/${regionSlug}/${provinceSlug}/${municipalitySlug}/${categorySlug}/${propertySlug}`;
+  }
+  return `/propiedad/${property.id}`;
+}
+
+/**
  * Generate OpenGraph metadata for property
  *
  * @param property - Property object

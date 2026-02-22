@@ -1,542 +1,269 @@
 # Architecture Overview
 
-This document explains the system design, folder structure, and key architectural decisions.
+**Last Updated:** 2026-02-22
+**Stack:** Next.js 14 (App Router), Supabase (PostgreSQL), TypeScript, Tailwind CSS, Vercel
+
+---
 
 ## Technology Stack
 
-### Frontend
-- **Next.js 14** - App Router (Server + Client Components)
-- **TypeScript** - Type safety throughout
-- **Tailwind CSS** - Utility-first styling
-- **Lucide React** - Icon library
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 — App Router, Server Components, ISR |
+| Database | Supabase — PostgreSQL with RLS, materialized views |
+| Auth | Supabase Auth (OAuth + magic link) |
+| Styling | Tailwind CSS (dark mode, custom theme) |
+| Icons | Lucide React |
+| Deployment | Vercel (edge network, ISR) |
 
-### Backend
-- **Supabase** - PostgreSQL database, auth, storage
-- **PostgreSQL** - Relational database with PostGIS
-
-### Key Libraries
-- `next` - Framework
-- `react` - UI library
-- `@supabase/supabase-js` - Database client
-- `tailwindcss` - Styling
+---
 
 ## Folder Structure
 
 ```
-/app                    # Next.js App Router pages
-  /api                  # API routes
-    /revalidate         # Cache invalidation endpoint
-  /auth                 # Authentication routes
-    /callback           # Supabase auth callback
-  /buscar               # Search results page
-  /propiedad/[id]       # Dynamic property detail pages
-  /profile              # User profile page
-  page.tsx              # Homepage
-  layout.tsx            # Root layout
+app/
+  page.tsx                              # Homepage (ISR: 5min)
+  layout.tsx                            # Root layout + metadata
+  sitemap.ts                            # Dynamic sitemap generation
+  robots.ts                             # Robots.txt
+  [region]/[province]/[municipality]/
+    [category]/[slug]/
+      page.tsx                          # SEO property detail (ISR)
+      PropertyDetailClient.tsx          # Client interactivity
+  propiedad/[id]/page.tsx               # Legacy property detail fallback
+  categoria/
+    venta/page.tsx                      # Sale listings (ISR: 5min)
+    alquiler/page.tsx                   # Rent listings (ISR: 5min)
+    obra-nueva/page.tsx                 # New buildings (ISR: 5min)
+  buscar/page.tsx                       # Search (force-dynamic)
+  profile/page.tsx                      # User profile (client)
+  auth/callback/page.tsx                # Supabase auth callback
+  api/
+    revalidate/route.ts                 # Cache invalidation + view refresh
+    track-view/route.ts                 # Property view tracking (beacon)
 
-/components             # React components
-  AboutSection.tsx      # About us section
-  AnalyticsSection.tsx  # Market statistics
-  AuthCallback.tsx      # Auth callback handler
-  CategoryCards.tsx     # Property type filter cards
-  ContactSection.tsx    # Contact form section
-  CTASection.tsx        # Call-to-action
-  Footer.tsx            # Site footer
-  HeroSection.tsx       # Homepage hero
-  HomeContent.tsx       # Homepage wrapper
-  InvestmentCard.tsx    # Investment property card
-  ListingStatistics.tsx # Property stats display
-  MiralunaLogo.tsx      # Site logo
-  Navbar.tsx            # Navigation bar
-  PlotCard.tsx          # Land plot card
-  PropertyCard.tsx      # House/apartment card
-  PropertyCarousel.tsx  # Property carousel slider
-  PropertyImage.tsx     # Optimized property image
-  Providers.tsx         # Context providers wrapper
-  SavePropertyButton.tsx # Favorite button
-  SearchContent.tsx     # Search page content
+components/
+  CategoryNav.tsx                       # Top navigation + mobile menu
+  CategoryPage.tsx                      # Listing page (filters, sort, pagination)
+  HomePageContent.tsx                   # All homepage sections (client)
+  PropertyCarousel.tsx                  # Horizontal scroll carousel
+  PropertyCard.tsx                      # House/apartment card
+  InvestmentCard.tsx                    # Commerce property card
+  PlotCard.tsx                          # Land plot card
+  SavePropertyButton.tsx               # Favourite toggle (localStorage + DB)
+  SearchContent.tsx                     # Search page content + filters
+  ListingStatistics.tsx                 # Market stats display
+  Footer.tsx                            # Multilingual footer
+  StructuredData.tsx                    # JSON-LD schema components
 
-/lib                    # Utilities and helpers
-  /supabase             # Supabase integration
-    client.ts           # Client-side Supabase client
-    server.ts           # Server-side Supabase client
-    queries.ts          # Client-side DB queries
-    server-queries.ts   # Server-side DB queries
-  analytics.ts          # Analytics tracking
-  i18n.tsx              # Translation system
-  savedProperties.tsx   # Saved properties context
+lib/
+  i18n.tsx                              # Language context + translation helpers
+  seo.ts                                # SEO utilities (getPropertyHref, metadata)
+  utils.ts                              # formatPrice, slugify, cn(), etc.
+  savedProperties.tsx                   # Saved properties context (localStorage)
+  types.ts                              # Shared types (PaginatedResult, filters)
+  supabase/
+    client.ts                           # Browser Supabase client
+    server.ts                           # Server Supabase client (cookies)
+    queries.ts                          # Client-side DB queries (JS SDK)
+    server-queries.ts                   # Server-side DB queries (fetch + ISR)
 
-/data
-  properties.ts         # Property type definitions
+data/
+  properties.ts                         # Property interface + static fallback data
 
-/public                 # Static assets
-/scripts                # Upload/scrape scripts (not for frontend)
+scripts/
+  SCRAPER_FIELD_GUIDE.md                # Scraper upload format reference
 ```
 
-## Architectural Patterns
+---
 
-### Server Components vs Client Components
+## Property Type System
 
-**Server Components** (default in Next.js 14):
-- Fetch data directly from Supabase
-- No client-side JavaScript shipped
-- Used for: pages, static layouts, data displays
+Two orthogonal fields — **never use the old `type` field** (removed):
 
-```typescript
-// app/page.tsx - Server Component
-export default async function HomePage() {
-  const properties = await getProperties(); // Direct DB call
-  return <div>{properties.map(...)}</div>;
-}
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `listing_type` | `sale` \| `rent` \| `new-building` | Transaction type |
+| `sub_category` | `apartment` \| `house` \| `commerce` \| `plot` | Property kind |
+
+UI labels map to DB values:
+- "Inversiones" → `sub_category = 'commerce'`
+- "Parcelas" → `sub_category = 'plot'`
+
+---
+
+## SEO URL Architecture
+
+All property links use locality-based URLs:
+
+```
+/{region}/{province}/{municipality}/{category}/{slug}
 ```
 
-**Client Components** ('use client'):
-- Handle interactivity (clicks, form inputs, state)
-- Access browser APIs (localStorage, window)
-- Used for: buttons, forms, interactive UI
-
-```typescript
-// components/SavePropertyButton.tsx - Client Component
-'use client';
-
-export default function SavePropertyButton({ propertyId }) {
-  const [isSaved, setIsSaved] = useState(false);
-  // Uses localStorage, needs 'use client'
-}
+**Examples:**
+```
+/comunidad-valenciana/alicante/javea/venta/villa-luminosa-idealista-12345
+/comunidad-valenciana/valencia/valencia/alquiler/piso-centro-idealista-67890
 ```
 
-### Dynamic Rendering
+**Generation:** `getPropertyHref(property)` in `lib/seo.ts`
+- Falls back to `/propiedad/{id}` when region/province/municipality are missing
+- Slug format: `{title-slug}-{property-id}` (ID extracted via `.split('-').pop()`)
 
-All pages use `export const dynamic = 'force-dynamic'` to ensure fresh data.
+**Route:** `app/[region]/[province]/[municipality]/[category]/[slug]/page.tsx`
 
-**Why**: Properties are constantly updated (prices, availability), so we avoid stale caching.
+---
 
-**Location**: app/page.tsx, app/buscar/page.tsx, app/propiedad/[id]/page.tsx
+## Rendering Strategy
 
-```typescript
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+| Page | Strategy | Revalidate | Why |
+|------|----------|------------|-----|
+| Homepage | ISR | 5 min | Fresh featured properties on CDN |
+| Category pages | ISR | 5 min | Pagination + filters cacheable per URL |
+| SEO property detail | ISR | on-demand | Metadata + structured data per property |
+| Legacy `/propiedad/[id]` | ISR | 5 min | Backward compatibility |
+| Search `/buscar` | force-dynamic | — | Real-time URL-param filtering |
+| Profile | Client Component | — | Requires localStorage/auth |
+
+**ISR invalidation:** POST to `/api/revalidate` with `x-revalidate-secret` header.
+The route calls `revalidatePath` for all category pages + homepage, then calls
+`refresh_card_properties()` in Supabase to rebuild the materialized view.
+
+---
+
+## Data Fetching
+
+### Two Query Libraries
+
+**`lib/supabase/server-queries.ts`** — For Server Components (ISR-aware)
+- Uses native `fetch` with `next: { revalidate }` caching tags
+- Called from `app/page.tsx`, category pages, property detail pages
+
+**`lib/supabase/queries.ts`** — For Client Components
+- Uses `@supabase/supabase-js` SDK
+- Called from `app/buscar/page.tsx` (`getPropertiesPaginated`), profile page
+
+### Pagination
+
+`getPropertiesPaginated()` in `lib/supabase/queries.ts`:
+- Reads filters from URL search params
+- Supabase `.range()` for offset pagination
+- Returns `{ data, pagination: { page, totalPages, totalCount, ... } }`
+- Bedroom filter: `gte('specs->>bedrooms', String(n))` (text extraction, works for 1-9)
+
+---
+
+## Translation System
+
+**Two patterns in use:**
+
+**Pattern A — `lib/i18n.tsx` (shared cross-component strings):**
+- `PropertyCard` badge labels, carousel "Explorar todos"
+- Add keys here only when shared across 2+ components
+
+**Pattern B — Inline objects (page/component-specific):**
+- Each component defines `const translations = { es: {...}, en: {...}, ru: {...} }`
+- Used by all pages, `CategoryNav`, `Footer`, `HomePageContent`, etc.
+- Preferred — avoids coupling to global translation file
+
+**Property translations:**
+- Base `properties.title` = English (from scraper)
+- `translations` table stores EN/RU override rows
+- `getPropertyById` joins translations and flattens into `title_en`, `description_en`, etc.
+- Only snake_case fields: `title_en`, `title_ru`, `description_en`, `description_ru`, `features_en`, `features_ru`
+
+---
+
+## Analytics & View Tracking
+
+**`property_analytics` table** — append-only event log (`view`, `save`, `unsave`)
+
+**View tracking flow:**
+1. Property detail page mounts → `navigator.sendBeacon('/api/track-view', ...)` (fire-and-forget)
+2. `/api/track-view` calls `record_property_view(property_id, user_id, session_id)` DB function
+3. Dedup: 1 view per user/session per property per day
+4. Increments `properties.views_count` on new unique view
+
+**saves_count:** Kept accurate by `trg_sync_saves_count` trigger on `saved_properties` table.
+
+---
+
+## Authentication
+
+**Provider:** Supabase Auth (OAuth via Google, magic link)
+
+**Flow:**
+```
+User clicks Sign In → Supabase Auth UI → credentials →
+/auth/callback → exchange code for session → session stored in cookies
 ```
 
-**Trade-off**: Slower initial load, but always fresh data. Acceptable for MVP.
+**Protected resources:** `saved_properties` table (RLS: users manage own rows)
+**Saved properties:** Also mirrored in localStorage for instant UI response
 
-### Data Fetching Pattern
+---
 
-**Two query libraries** (duplicate code - see TECHNICAL_DEBT.md):
+## Styling
 
-1. **lib/supabase/server-queries.ts** - For Server Components
-2. **lib/supabase/queries.ts** - For Client Components
+**Theme:** Dark mode with orange accents (`primary: #f97316`)
 
-Both have identical query logic but use different clients.
+**Key CSS classes** (defined in `app/globals.css`):
+- `.gradient-text` — Orange gradient fill
+- `.hover-glow` — Orange glow on hover
+- `.scrollbar-hidden` — Hides scrollbar for carousel
+- `.snap-x` — Horizontal scroll snapping for carousels
 
-```typescript
-// server-queries.ts (Server Components)
-export async function getProperties() {
-  const supabase = createServerClient();
-  const { data } = await supabase.from('properties')...
-  return data || [];
-}
+---
 
-// queries.ts (Client Components)
-export async function getProperties() {
-  const supabase = createClient();
-  const { data } = await supabase.from('properties')...
-  return data || [];
-}
+## Environment Variables
+
+```env
+# Required — public
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+
+# Required — server-only
+SUPABASE_SERVICE_ROLE_KEY=eyJ...       # For /api/revalidate RPC calls
+REVALIDATE_SECRET=your-secret          # For /api/revalidate auth
+
+# Optional
+NEXT_PUBLIC_SITE_URL=https://miraluna.es
 ```
 
-**Problem**: ~400 lines duplicated. See TECHNICAL_DEBT.md for refactoring options.
+---
+
+## Build & Deployment
+
+```bash
+npm run build   # Production build
+npm run dev     # Development (localhost:3000)
+```
+
+**Deployment:** Vercel — automatic builds on `git push main`.
+
+**After bulk data upload:**
+1. Run `SELECT refresh_card_properties();` in Supabase SQL editor
+2. POST to `/api/revalidate` with secret to flush ISR cache
+
+---
 
 ## Component Hierarchy
 
 ```
-App (layout.tsx)
-├── Providers (Context wrappers)
-│   ├── LanguageProvider (i18n)
-│   └── SavedPropertiesProvider (favorites)
-├── Navbar
-│   ├── LanguageSwitcher
-│   └── SearchBar
-├── [Page Content]
-│   ├── HomePage
-│   │   ├── HeroSection
-│   │   ├── CategoryCards
-│   │   ├── PropertyCarousel
-│   │   │   └── PropertyCard/InvestmentCard/PlotCard (multiple)
-│   │   ├── AnalyticsSection
-│   │   ├── AboutSection
-│   │   ├── ContactSection
-│   │   └── CTASection
-│   ├── SearchPage (buscar)
-│   │   ├── SearchFilters
-│   │   └── PropertyGrid
-│   │       └── PropertyCard/InvestmentCard/PlotCard (multiple)
-│   ├── PropertyDetailPage (propiedad/[id])
-│   │   ├── PropertyImage (gallery)
-│   │   ├── PropertyInfo
-│   │   ├── PropertyFeatures
-│   │   └── PropertyCarousel (4 different types)
-│   └── ProfilePage
-│       └── SavedPropertiesGrid
-└── Footer
+app/layout.tsx
+└── Providers (LanguageProvider + SavedPropertiesProvider)
+    ├── CategoryNav (mobile menu, language switcher, auth)
+    ├── [Page Content]
+    │   ├── Homepage → HomePageContent
+    │   │   ├── PropertyCarousel (sale, rent, new-building)
+    │   │   │   └── PropertyCard / InvestmentCard / PlotCard
+    │   │   └── ListingStatistics
+    │   ├── Category pages → CategoryPage
+    │   │   └── PropertyCard / InvestmentCard / PlotCard (paginated)
+    │   ├── Search → SearchContent (with filter sidebar)
+    │   │   └── PropertyCard / InvestmentCard / PlotCard (paginated)
+    │   ├── Property detail → PropertyDetailClient
+    │   │   └── PropertyCarousel (similar properties)
+    │   └── Profile → saved properties grid
+    └── Footer
 ```
-
-## Context Providers
-
-### LanguageProvider (lib/i18n.tsx)
-
-Manages current locale and provides translation utilities.
-
-```typescript
-// Provides:
-const { locale, setLocale } = useLanguage();
-```
-
-**Storage**: localStorage (persists across sessions)
-**Default**: Spanish (es), falls back to browser language
-
-### SavedPropertiesProvider (lib/savedProperties.tsx)
-
-Manages user's saved/favorited properties.
-
-```typescript
-// Provides:
-const { savedProperties, toggleSave, isSaved } = useSavedProperties();
-```
-
-**Storage**: localStorage (will migrate to DB)
-**Format**: Array of property IDs
-
-## Page Rendering Strategies
-
-| Page | Rendering | Why |
-|------|-----------|-----|
-| Homepage (/) | Dynamic Server | Fresh property data |
-| Search (/buscar) | Dynamic Server | Real-time filtering |
-| Property Detail (/propiedad/[id]) | Dynamic Server | Price updates, availability |
-| Profile (/profile) | Client Component | Accesses localStorage |
-
-**Note**: No static generation (SSG) or incremental static regeneration (ISR) currently used. Everything is dynamic for simplicity and data freshness.
-
-## Database Connection
-
-### Two Supabase Clients
-
-**Server Client** (lib/supabase/server.ts):
-```typescript
-import { createServerClient as createClient } from '@supabase/ssr';
-
-export function createServerClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get, set, remove // Cookie handling for auth
-      }
-    }
-  );
-}
-```
-
-**Client Client** (lib/supabase/client.ts):
-```typescript
-import { createBrowserClient } from '@supabase/ssr';
-
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-```
-
-**When to use**:
-- Server Components → `createServerClient()`
-- Client Components → `createClient()`
-
-## Styling Approach
-
-### Tailwind CSS Configuration
-
-**Theme**: Dark mode with orange accents
-
-```javascript
-// tailwind.config.js
-theme: {
-  extend: {
-    colors: {
-      primary: '#f97316',    // Orange-500
-      secondary: '#fb923c',  // Orange-400
-      background: '#0a0a0a', // Near-black
-      card: '#1a1a1a',       // Dark gray
-      border: '#2a2a2a',     // Subtle borders
-    }
-  }
-}
-```
-
-### Global Styles
-
-**Location**: app/globals.css
-
-Key features:
-- CSS custom properties for colors
-- Gradient text utility
-- Hover glow effect
-- Smooth transitions
-
-```css
-.gradient-text {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hover-glow {
-  transition: all 0.3s ease;
-}
-.hover-glow:hover {
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
-}
-```
-
-### Component Styling Pattern
-
-All components use inline Tailwind classes (no CSS modules or styled-components).
-
-**Example**:
-```tsx
-<div className="bg-card border border-border rounded-xl p-5 hover:border-primary transition-all">
-  <h3 className="text-lg font-semibold gradient-text">Title</h3>
-</div>
-```
-
-## Grid System
-
-### Homepage Carousels
-
-**Implementation**: Custom horizontal scroll
-**Breakpoints**:
-- Mobile: Single column, swipe scroll
-- Tablet: 2 columns
-- Desktop: 3-4 columns
-
-```tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-  {properties.map(property => <PropertyCard key={property.id} property={property} />)}
-</div>
-```
-
-### Search Results Grid
-
-**Implementation**: CSS Grid with auto-fill
-**Min card width**: 260px
-**Max card width**: 1fr (fills available space)
-
-```tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-  {/* Auto-adjusts columns based on screen width */}
-</div>
-```
-
-**Why auto-fill**: Responsive without breakpoints, cards naturally reflow.
-
-## Authentication Flow
-
-**Provider**: Supabase Auth
-**Method**: Email/Password (can extend to OAuth)
-
-### Flow Diagram
-
-```
-User clicks "Sign In"
-  → Redirected to Supabase Auth UI
-  → User enters credentials
-  → Supabase validates
-  → Redirects to /auth/callback
-  → Callback exchanges code for session
-  → Redirects to /profile
-```
-
-**Session Storage**: Cookies (handled by Supabase)
-**Session Duration**: 1 hour (refresh token extends)
-
-### Protected Routes
-
-Currently none - all pages are public.
-Saved properties stored in localStorage (no auth required).
-
-**Future**: Migrate saved properties to database, require auth.
-
-## Performance Considerations
-
-### Current Optimizations
-
-1. **Server Components** - Reduce client-side JavaScript
-2. **Next.js Image** - Not currently used (using img tags)
-3. **CSS Grid** - Efficient layout, no JavaScript
-4. **Tailwind Purge** - Removes unused CSS in production
-
-### Known Performance Issues
-
-1. **No image optimization** - Using raw img tags instead of next/image
-2. **No lazy loading** - All carousels load immediately
-3. **Large initial bundle** - All components loaded upfront
-4. **No code splitting** - Dynamic imports not used
-
-**Impact**: Acceptable for MVP with ~60 properties. Will need optimization at scale.
-
-See TECHNICAL_DEBT.md for improvement plan.
-
-## Environment Variables
-
-Required in `.env.local`:
-
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-
-# Optional - Analytics
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-```
-
-**Note**: All Supabase vars are `NEXT_PUBLIC_*` because they're used in client components.
-
-## Build and Deployment
-
-### Build Process
-
-```bash
-npm run build
-```
-
-**Outputs**:
-- `.next/` - Production build
-- Static assets
-- Server-side code
-
-**Build Time**: ~30-60 seconds for current codebase
-
-### Deployment Targets
-
-**Recommended**: Vercel (zero-config)
-- Automatic builds on git push
-- Preview deployments for branches
-- Edge caching
-- Serverless functions for API routes
-
-**Alternative**: Any Node.js host (DigitalOcean, AWS, etc.)
-
-## Error Handling
-
-### Current Approach
-
-**Database errors**: Return empty arrays
-```typescript
-const { data, error } = await supabase.from('properties').select();
-if (error) {
-  console.error(error);
-  return []; // Fail gracefully
-}
-return data;
-```
-
-**Missing properties**: Return null, show "not found"
-```typescript
-if (!property) {
-  return <div>Property not found</div>;
-}
-```
-
-### What's Missing
-
-- No error boundaries (app crashes on component errors)
-- No retry logic for failed DB queries
-- No user-facing error messages
-- No error logging/monitoring
-
-See TECHNICAL_DEBT.md for improvements.
-
-## Type Safety
-
-### TypeScript Configuration
-
-**Mode**: Strict
-**Key settings**:
-- `strict: true` - All strict checks enabled
-- `noImplicitAny: true` - No implicit any types
-- `strictNullChecks: true` - Handle null/undefined
-
-### Type Definitions
-
-**Property types**: `data/properties.ts`
-```typescript
-export interface Property {
-  id: string;
-  type: 'house' | 'apartment' | 'investment' | 'plot';
-  title: string;
-  titleEn?: string;
-  titleEs?: string;
-  titleRu?: string;
-  // ... (supports both camelCase and snake_case)
-}
-```
-
-**Locale types**: `lib/i18n.tsx`
-```typescript
-export type Locale = 'es' | 'en' | 'ru';
-```
-
-**Supabase types**: Auto-generated from database schema (not currently used)
-
-## Key Architectural Decisions
-
-### 1. Dynamic Rendering Over Static
-
-**Decision**: Use `force-dynamic` on all pages
-**Reason**: Properties change frequently, caching causes stale data
-**Trade-off**: Slower initial load, but always fresh
-
-### 2. Duplicate Query Libraries
-
-**Decision**: Separate server-queries.ts and queries.ts
-**Reason**: Different Supabase clients for server/client components
-**Trade-off**: ~400 lines duplicated, harder to maintain
-
-**Future**: Unify with single implementation (see TECHNICAL_DEBT.md)
-
-### 3. Card Components Not Unified
-
-**Decision**: Three separate card components (PropertyCard, InvestmentCard, PlotCard)
-**Reason**: Slight differences in displayed specs
-**Trade-off**: ~220 lines duplicated, 95% identical code
-
-**Future**: Create BasePropertyCard component (see TECHNICAL_DEBT.md)
-
-### 4. Translation Fields in Database
-
-**Decision**: Separate columns for each language (title_en, title_es, title_ru)
-**Reason**: Simple queries, no joins needed
-**Trade-off**: More columns, harder to add new languages
-
-**Alternative**: JSON column with all translations (more flexible but complex queries)
-
-### 5. localStorage for Saved Properties
-
-**Decision**: Store favorites in localStorage
-**Reason**: No auth required, works offline, simple
-**Trade-off**: Not synced across devices, lost if cleared
-
-**Future**: Migrate to database with auth (see TECHNICAL_DEBT.md)
-
-## Next Steps
-
-See the other documentation files for details on specific areas:
-
-- **[DATABASE.md](./DATABASE.md)** - Database schema and queries
-- **[TRANSLATION.md](./TRANSLATION.md)** - i18n system details
-- **[COMPONENTS.md](./COMPONENTS.md)** - Component patterns
-- **[DATA_FLOW.md](./DATA_FLOW.md)** - How data moves through the app
-- **[TECHNICAL_DEBT.md](./TECHNICAL_DEBT.md)** - Known issues and improvements

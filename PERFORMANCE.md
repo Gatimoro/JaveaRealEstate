@@ -1,6 +1,6 @@
 # Performance Architecture Documentation
 
-**Last Updated:** February 4, 2026
+**Last Updated:** 2026-02-22
 **Target:** Spain-wide real estate platform with 100K+ properties
 **Load Time Target:** <1s First Contentful Paint, <2s Time to Interactive on 3G
 
@@ -40,18 +40,19 @@ This application uses a multi-layered performance strategy designed for instant 
 **What:** Pre-render pages at build time, cache for specified duration, rebuild in background after expiry.
 
 **Where Used:**
-- Homepage: 24-hour cache (`revalidate: 86400`)
+- Homepage: 5-minute cache (`revalidate: 300`)
 - Category pages: 5-minute cache (`revalidate: 300`)
-- Property detail pages: On-demand
+- Search page: `force-dynamic` (URL-param driven, no cache)
+- Property detail pages: On-demand (revalidated via `/api/revalidate`)
 
 **How It Works:**
 ```typescript
 // app/page.tsx
-export const revalidate = 86400; // 24 hours
+export const revalidate = 300; // 5 minutes
 
 export default async function HomePage() {
   const properties = await getFeaturedPropertiesForCards('sale', 6);
-  return <HomeContent properties={properties} />;
+  return <HomePageContent saleProperties={properties} ... />;
 }
 ```
 
