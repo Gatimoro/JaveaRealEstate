@@ -5,7 +5,25 @@
  */
 
 import { createClient } from '@/lib/supabase/client';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Property } from '@/data/properties';
+
+/**
+ * Server-side Supabase client with cache: 'no-store' so Next.js data cache
+ * never serves stale results for ISR-rebuilt category/search pages.
+ */
+function createServerClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        fetch: (url, options = {}) =>
+          fetch(url as string, { ...(options as RequestInit), cache: 'no-store' }),
+      },
+    }
+  );
+}
 
 /**
  * Get all available properties (used by client components for recommendations)
@@ -91,7 +109,7 @@ export async function getPropertiesPaginated(options: {
     hasPreviousPage: boolean;
   };
 }> {
-  const supabase = createClient();
+  const supabase = createServerClient();
 
   const page = options.page || 1;
   const pageSize = options.pageSize || 24;
@@ -122,16 +140,16 @@ export async function getPropertiesPaginated(options: {
   }
 
   if (filters.minBedrooms !== undefined) {
-    // DB stores bedrooms as JSON string "3" — use text extraction (->>) for numeric string comparison
-    query = query.gte('specs->>bedrooms', String(filters.minBedrooms));
+    // specs->bedrooms extracts as JSONB integer — numeric comparison, works for any count
+    query = query.gte('specs->bedrooms', filters.minBedrooms);
   }
 
   if (filters.maxBedrooms !== undefined) {
-    query = query.lte('specs->>bedrooms', String(filters.maxBedrooms));
+    query = query.lte('specs->bedrooms', filters.maxBedrooms);
   }
 
   if (filters.minBathrooms !== undefined) {
-    query = query.gte('specs->>bathrooms', String(filters.minBathrooms));
+    query = query.gte('specs->bathrooms', filters.minBathrooms);
   }
 
   // Note: minSize/maxSize filters removed — DB stores area as "146.6 m2" string,

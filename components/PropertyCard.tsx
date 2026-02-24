@@ -33,6 +33,20 @@ interface PropertyCardProps {
   fullWidthMobile?: boolean;
 }
 
+// Spec keys already displayed as icons — exclude from extra tags
+const KNOWN_SPEC_KEYS = new Set(['bedrooms', 'bathrooms', 'size', 'area', 'plotSize', 'roi', 'zone', 'buildable']);
+
+/** Remove known "no photo" placeholder URLs from external scrapers */
+function filterImages(urls: string[]): string[] {
+  return urls.filter(url =>
+    url &&
+    !url.includes('default_nophoto') &&
+    !url.includes('nophoto') &&
+    !url.includes('no_photo') &&
+    !url.includes('no-photo')
+  );
+}
+
 // Badge key → i18n key mapping
 const badgeI18nMap: Record<string, keyof typeof translations['es']> = {
   new: 'badgeNew',
@@ -44,6 +58,7 @@ const badgeI18nMap: Record<string, keyof typeof translations['es']> = {
 function ImageSlider({ images, title }: { images: string[]; title: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [loadedUpTo, setLoadedUpTo] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   function handleScroll() {
@@ -54,6 +69,10 @@ function ImageSlider({ images, title }: { images: string[]; title: string }) {
       setActiveIndex(index);
       if (index > loadedUpTo) setLoadedUpTo(index);
     }
+  }
+
+  function markFailed(i: number) {
+    setFailedImages(prev => { const next = new Set(prev); next.add(i); return next; });
   }
 
   return (
@@ -67,15 +86,23 @@ function ImageSlider({ images, title }: { images: string[]; title: string }) {
         {images.map((src, i) => (
           <div key={i} className="flex-none w-full h-full relative snap-start">
             {i <= loadedUpTo + 1 ? (
-              <Image
-                src={src}
-                alt={`${title} - ${i + 1}`}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover"
-                loading={i === 0 ? 'eager' : 'lazy'}
-                quality={85}
-              />
+              failedImages.has(i) ? (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-muted">
+                  <Building2 className="w-12 h-12 text-muted-foreground/30" />
+                  <span className="text-xs text-muted-foreground">Sin imagen</span>
+                </div>
+              ) : (
+                <Image
+                  src={src}
+                  alt={`${title} - ${i + 1}`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  quality={85}
+                  onError={() => markFailed(i)}
+                />
+              )
             ) : (
               <div className="w-full h-full bg-muted" />
             )}
@@ -103,6 +130,7 @@ function ImageSlider({ images, title }: { images: string[]; title: string }) {
 export default function PropertyCard({ property, fullWidthMobile = true }: PropertyCardProps) {
   const { locale } = useLanguage();
   const [showAllTags, setShowAllTags] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const t = translations[locale];
 
   // For minimal PropertyCard type, use title directly (Spanish only)
@@ -139,11 +167,18 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
     ? (getLocalizedField(property as Property, 'features', locale) || [])
     : [];
   const features = Array.isArray(featuresRaw) ? featuresRaw : [];
-  const maxVisibleTags = 3;
-  const visibleFeatures = showAllTags ? features : features.slice(0, maxVisibleTags);
-  const hasMoreTags = features.length > maxVisibleTags;
 
-  const images = property.images ?? [];
+  // Extra spec fields (non-standard keys) shown as additional tags
+  const specTags = Object.entries(property.specs || {})
+    .filter(([key, val]) => !KNOWN_SPEC_KEYS.has(key) && val != null && String(val).trim() !== '')
+    .map(([, val]) => String(val));
+  const allTags = [...features, ...specTags];
+
+  const maxVisibleTags = 3;
+  const visibleTags = showAllTags ? allTags : allTags.slice(0, maxVisibleTags);
+  const hasMoreTags = allTags.length > maxVisibleTags;
+
+  const images = filterImages(property.images ?? []);
   const hasMultipleImages = images.length > 1;
 
   // Localized badge text
@@ -158,7 +193,7 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
         <div className="relative h-48 sm:h-56 overflow-hidden bg-muted">
           {hasMultipleImages ? (
             <ImageSlider images={images} title={title} />
-          ) : images[0] ? (
+          ) : images[0] && !imgError ? (
             <Image
               src={images[0]}
               alt={title}
@@ -167,10 +202,12 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
               className="object-cover group-hover:scale-110 transition-transform duration-300"
               loading="lazy"
               quality={85}
+              onError={() => setImgError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
               <Building2 className="w-16 h-16 text-muted-foreground/30" />
+              <span className="text-xs text-muted-foreground">Sin imagen</span>
             </div>
           )}
 
@@ -241,15 +278,15 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
           </div>
 
           {/* Optional tags/features */}
-          {features.length > 0 && (
+          {allTags.length > 0 && (
             <div className="pt-2 border-t border-border">
               <div className="flex flex-wrap gap-2">
-                {visibleFeatures.map((feature, index) => (
+                {visibleTags.map((tag, index) => (
                   <span
                     key={index}
                     className="inline-block px-2 py-1 bg-muted text-xs rounded-md text-muted-foreground"
                   >
-                    {feature}
+                    {tag}
                   </span>
                 ))}
               </div>
@@ -270,7 +307,7 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
                     </>
                   ) : (
                     <>
-                      <span>+{features.length - maxVisibleTags} más</span>
+                      <span>+{allTags.length - maxVisibleTags} más</span>
                       <ChevronDown className="w-3 h-3" />
                     </>
                   )}

@@ -233,7 +233,8 @@ export async function getFeaturedPropertiesForCards(
 
       // Strip internal fields before returning
       const { views_count, saves_count, created_at, ...card } = p;
-      return { ...card, badge };
+      const rent_period = card.rent_period ?? (card.listing_type === 'rent' ? 'month' : card.rent_period);
+      return { ...card, badge, rent_period };
     });
 
     return result;
@@ -282,13 +283,18 @@ export async function getPropertyById(id: string): Promise<Property | null> {
       }>;
     };
 
-    const data = await supabaseFetch<PropertyWithTranslations>('properties', {
+    let data = await supabaseFetch<PropertyWithTranslations>('properties', {
       id: `eq.${id}`,
       select: '*,translations(locale,title,description,features)',
     });
 
     const property = data[0];
     if (!property) return null;
+
+    // Default rent_period to 'month' for rent listings missing the field
+    if (property.listing_type === 'rent' && !property.rent_period) {
+      (property as any).rent_period = 'month';
+    }
 
     // Flatten translations array into snake_case fields
     if (property.translations) {

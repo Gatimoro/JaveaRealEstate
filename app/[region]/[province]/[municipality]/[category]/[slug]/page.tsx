@@ -53,7 +53,7 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   // Extract property ID from slug (last part after final dash)
-  const propertyId = params.slug.split('-').pop() || '';
+  const propertyId = params.slug.split('--').pop() || '';
 
   // Fetch property data
   let property;
@@ -126,7 +126,7 @@ export default async function PropertyDetailPage({
   params: { region: string; province: string; municipality: string; category: string; slug: string };
 }) {
   // Extract property ID from slug
-  const propertyId = params.slug.split('-').pop() || '';
+  const propertyId = params.slug.split('--').pop() || '';
 
   // Fetch property data
   let property;

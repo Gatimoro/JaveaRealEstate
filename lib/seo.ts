@@ -46,7 +46,7 @@ export function generatePropertySlug(property: Property): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 50); // Max 50 chars for title part
 
-  return `${titleSlug}-${property.id}`;
+  return `${titleSlug}--${property.id}`;
 }
 
 /**
@@ -126,7 +126,7 @@ export function getPropertyHref(property: {
     };
     const categorySlug = categoryMap[property.listing_type || 'sale'] ?? 'venta';
     const titleSlug = slugify(property.title).slice(0, 50);
-    const propertySlug = `${titleSlug}-${property.id}`;
+    const propertySlug = `${titleSlug}--${property.id}`;
     return `/${regionSlug}/${provinceSlug}/${municipalitySlug}/${categorySlug}/${propertySlug}`;
   }
   return `/propiedad/${property.id}`;
