@@ -20,9 +20,10 @@ import { getProperties } from '@/lib/supabase/queries';
 import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, filterImages } from '@/lib/utils';
 import { getPropertyHref } from '@/lib/seo';
 import SavePropertyButton from '@/components/SavePropertyButton';
+import NoImageFallback from '@/components/NoImageFallback';
 
 interface PropertyDetailClientProps {
   property: Property;
@@ -33,7 +34,10 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
   const { locale } = useLanguage();
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [heroImgError, setHeroImgError] = useState(false);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
+
+  const images = filterImages(property.images ?? []);
 
   // Track unique view — fires once on mount, fire-and-forget via sendBeacon
   useEffect(() => {
@@ -171,15 +175,11 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
   const features = getLocalizedArray(property, 'features', locale);
 
   const nextImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === property.images.length - 1 ? 0 : prev + 1
-    );
+    setSelectedImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
   const prevImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === 0 ? property.images.length - 1 : prev - 1
-    );
+    setSelectedImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   // Calculate distance between two coordinates using Haversine formula
@@ -256,14 +256,18 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
         href={getPropertyHref(prop)}
         className="group w-full max-w-md md:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
       >
-        <div className="relative h-48 overflow-hidden">
-          <Image
-            src={prop.images[0]}
-            alt={cardTitle}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover group-hover:scale-110 transition-transform duration-300"
-          />
+        <div className="relative h-48 overflow-hidden bg-[rgb(25,20,20)]">
+          {filterImages(prop.images ?? [])[0] ? (
+            <Image
+              src={filterImages(prop.images ?? [])[0]}
+              alt={cardTitle}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover group-hover:scale-110 transition-transform duration-300"
+            />
+          ) : (
+            <NoImageFallback size="sm" />
+          )}
           {(prop.badge || badge) && (
             <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
               {badge || prop.badge}
@@ -327,16 +331,21 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
         {/* Image Gallery */}
         <div className="mb-8">
           {/* Hero Image */}
-          <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden mb-4 group">
-            <Image
-              src={property.images[selectedImageIndex]}
-              alt={`${title} - ${t.image} ${selectedImageIndex + 1}`}
-              fill
-              sizes="(max-width: 768px) 100vw, 1200px"
-              className="object-cover"
-              priority
-              quality={90}
-            />
+          <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden mb-4 group bg-[rgb(25,20,20)]">
+            {images.length > 0 && !heroImgError ? (
+              <Image
+                src={images[selectedImageIndex]}
+                alt={`${title} - ${t.image} ${selectedImageIndex + 1}`}
+                fill
+                sizes="(max-width: 768px) 100vw, 1200px"
+                className="object-cover"
+                priority
+                quality={90}
+                onError={() => setHeroImgError(true)}
+              />
+            ) : (
+              <NoImageFallback size="lg" />
+            )}
             {property.badge && (
               <div className="absolute top-4 left-4 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-full">
                 {property.badge}
@@ -349,7 +358,7 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
             </div>
 
             {/* Navigation Arrows - Only show if more than 1 image */}
-            {property.images.length > 1 && (
+            {images.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
@@ -368,34 +377,36 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
 
                 {/* Image counter */}
                 <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/70 text-white text-sm rounded-full">
-                  {selectedImageIndex + 1} / {property.images.length}
+                  {selectedImageIndex + 1} / {images.length}
                 </div>
               </>
             )}
           </div>
 
           {/* Thumbnail Row */}
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {property.images.map((image, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedImageIndex(index)}
-                className={`relative flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                  selectedImageIndex === index
-                    ? 'border-primary scale-105'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <Image
-                  src={image}
-                  alt={`${title} - ${t.image} ${index + 1}`}
-                  fill
-                  sizes="96px"
-                  className="object-cover"
-                />
-              </button>
-            ))}
-          </div>
+          {images.length > 1 && (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={`relative flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all bg-[rgb(25,20,20)] ${
+                    selectedImageIndex === index
+                      ? 'border-primary scale-105'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <Image
+                    src={image}
+                    alt={`${title} - ${t.image} ${index + 1}`}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

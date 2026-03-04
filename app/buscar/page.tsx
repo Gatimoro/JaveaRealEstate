@@ -8,9 +8,9 @@ import type { Property } from '@/data/properties';
 
 /**
  * Search Page — server-side filtering via URL params.
- * Dynamic (not cached) since every search query is unique.
+ * revalidate = 300 is set but queries use cache: 'no-store', so results are always fresh.
  */
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function SearchPage({
   searchParams,

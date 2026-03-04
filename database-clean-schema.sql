@@ -178,16 +178,18 @@ SELECT
   p.municipality,
   p.province,
   p.badge,
-  p.images->0 AS thumbnail,                  -- First image only
-  p.specs->>'bedrooms' AS bedrooms,
-  p.specs->>'bathrooms' AS bathrooms,
-  p.specs->>'size' AS size,
+  p.images AS images,                                    -- Full images array (for card sliders)
+  p.specs,                                               -- Full specs JSONB (for extra feature tags)
+  (p.specs->'bedrooms')::int AS bedrooms,               -- Typed int for numeric filter/sort
+  (p.specs->'bathrooms')::int AS bathrooms,             -- Typed int for numeric filter
+  (p.specs->'size')::float AS size,                     -- Typed float for sort
   p.views_count,
   p.saves_count,
   p.created_at,
-  -- Full-text search vector (Spanish)
+  -- Full-text search vector (Spanish) — includes description for richer matching
   to_tsvector('spanish',
     COALESCE(p.title, '') || ' ' ||
+    COALESCE(p.description, '') || ' ' ||
     COALESCE(p.location, '') || ' ' ||
     COALESCE(p.municipality, '') || ' ' ||
     COALESCE(p.province, '')
@@ -200,6 +202,7 @@ CREATE INDEX idx_card_properties_listing_type ON card_properties(listing_type);
 CREATE INDEX idx_card_properties_price ON card_properties(price);
 CREATE INDEX idx_card_properties_municipality ON card_properties(municipality);
 CREATE INDEX idx_card_properties_created ON card_properties(created_at DESC);
+CREATE INDEX idx_card_properties_bedrooms ON card_properties(bedrooms);
 CREATE INDEX idx_card_properties_search ON card_properties USING GIN(search_vector);
 
 -- ============================================================================

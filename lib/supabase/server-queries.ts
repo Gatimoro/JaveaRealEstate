@@ -172,11 +172,11 @@ export async function getFeaturedPropertiesForCards(
   try {
     const poolSize = limit * 5;
 
-    // Fetch larger pool including metadata for badge computation
-    const pool = await supabaseFetch<PropertyCard>('properties', {
+    // Fetch larger pool from card_properties — pre-computed view, smaller rows, GIN index.
+    // status = 'available' is baked into the view; no need to filter here.
+    const pool = await supabaseFetch<PropertyCard>('card_properties', {
       select: 'id,title,price,location,region,province,municipality,images,badge,specs,listing_type,sub_category,rent_period,views_count,saves_count,created_at',
       listing_type: `eq.${listing_type}`,
-      status: 'eq.available',
       order: 'created_at.desc',
       limit: poolSize.toString(),
     }, {

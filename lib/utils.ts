@@ -163,3 +163,14 @@ export function parseFilters(searchParams: URLSearchParams) {
     search: searchParams.get('q') || undefined,
   };
 }
+
+/** Strip known "no photo" placeholder URLs inserted by scrapers */
+export function filterImages(urls: string[]): string[] {
+  return (urls ?? []).filter(url =>
+    url &&
+    !url.includes('default_nophoto') &&
+    !url.includes('nophoto') &&
+    !url.includes('no_photo') &&
+    !url.includes('no-photo')
+  );
+}

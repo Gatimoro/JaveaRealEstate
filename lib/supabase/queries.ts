@@ -116,11 +116,13 @@ export async function getPropertiesPaginated(options: {
   const filters = options.filters || {};
   const sortBy = options.sortBy || 'date-desc';
 
-  // Build query
+  // Build query against card_properties materialized view.
+  // - status = 'available' is baked into the view definition
+  // - bedrooms/bathrooms/size are typed numeric columns (no JSONB extraction needed)
+  // - search_vector has a GIN index for fast full-text search
   let query = supabase
-    .from('properties')
-    .select('*', { count: 'exact' })
-    .eq('status', 'available');
+    .from('card_properties')
+    .select('*', { count: 'exact' });
 
   // Apply filters
   if (filters.listingType) {
@@ -140,20 +142,17 @@ export async function getPropertiesPaginated(options: {
   }
 
   if (filters.minBedrooms !== undefined) {
-    // specs->bedrooms extracts as JSONB integer — numeric comparison, works for any count
-    query = query.gte('specs->bedrooms', filters.minBedrooms);
+    // Integer column in card_properties — numeric comparison, works for any count
+    query = query.gte('bedrooms', filters.minBedrooms);
   }
 
   if (filters.maxBedrooms !== undefined) {
-    query = query.lte('specs->bedrooms', filters.maxBedrooms);
+    query = query.lte('bedrooms', filters.maxBedrooms);
   }
 
   if (filters.minBathrooms !== undefined) {
-    query = query.gte('specs->bathrooms', filters.minBathrooms);
+    query = query.gte('bathrooms', filters.minBathrooms);
   }
-
-  // Note: minSize/maxSize filters removed — DB stores area as "146.6 m2" string,
-  // making numeric comparisons impossible without a DB migration.
 
   if (filters.region) {
     query = query.eq('region', filters.region);
@@ -172,10 +171,11 @@ export async function getPropertiesPaginated(options: {
   }
 
   if (filters.search) {
-    // Full-text search across title and description
-    query = query.or(
-      `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,location.ilike.%${filters.search}%`
-    );
+    // Full-text search via pre-built tsvector + GIN index — much faster than ILIKE
+    query = query.textSearch('search_vector', filters.search, {
+      type: 'plain',
+      config: 'spanish',
+    });
   }
 
   // Apply sorting
@@ -193,10 +193,10 @@ export async function getPropertiesPaginated(options: {
       query = query.order('created_at', { ascending: false });
       break;
     case 'size-desc':
-      query = query.order('specs->size', { ascending: false });
+      query = query.order('size', { ascending: false });
       break;
     case 'size-asc':
-      query = query.order('specs->size', { ascending: true });
+      query = query.order('size', { ascending: true });
       break;
     default:
       query = query.order('created_at', { ascending: false });

@@ -17,16 +17,17 @@
  */
 'use client';
 
-import { Bed, Bath, Maximize, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
+import { Bed, Bath, Maximize, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useRef } from 'react';
 import type { Property } from '@/data/properties';
 import type { PropertyCard as PropertyCardType } from '@/lib/supabase/server-queries';
 import { useLanguage, getPropertyTitle, getLocalizedField, translations } from '@/lib/i18n';
-import { formatPrice, getPricePerSqm } from '@/lib/utils';
+import { formatPrice, getPricePerSqm, filterImages } from '@/lib/utils';
 import { getPropertyHref } from '@/lib/seo';
 import SavePropertyButton from './SavePropertyButton';
+import NoImageFallback from './NoImageFallback';
 
 interface PropertyCardProps {
   property: Property | PropertyCardType; // Accept both full and minimal property data
@@ -35,17 +36,6 @@ interface PropertyCardProps {
 
 // Spec keys already displayed as icons — exclude from extra tags
 const KNOWN_SPEC_KEYS = new Set(['bedrooms', 'bathrooms', 'size', 'area', 'plotSize', 'roi', 'zone', 'buildable']);
-
-/** Remove known "no photo" placeholder URLs from external scrapers */
-function filterImages(urls: string[]): string[] {
-  return urls.filter(url =>
-    url &&
-    !url.includes('default_nophoto') &&
-    !url.includes('nophoto') &&
-    !url.includes('no_photo') &&
-    !url.includes('no-photo')
-  );
-}
 
 // Badge key → i18n key mapping
 const badgeI18nMap: Record<string, keyof typeof translations['es']> = {
@@ -75,8 +65,14 @@ function ImageSlider({ images, title }: { images: string[]; title: string }) {
     setFailedImages(prev => { const next = new Set(prev); next.add(i); return next; });
   }
 
+  function scrollBy(direction: 'left' | 'right') {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction === 'right' ? el.clientWidth : -el.clientWidth, behavior: 'smooth' });
+  }
+
   return (
-    <div className="relative w-full h-full">
+    <div className="group/slider relative w-full h-full">
       {/* Slides */}
       <div
         ref={scrollRef}
@@ -87,10 +83,7 @@ function ImageSlider({ images, title }: { images: string[]; title: string }) {
           <div key={i} className="flex-none w-full h-full relative snap-start">
             {i <= loadedUpTo + 1 ? (
               failedImages.has(i) ? (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-muted">
-                  <Building2 className="w-12 h-12 text-muted-foreground/30" />
-                  <span className="text-xs text-muted-foreground">Sin imagen</span>
-                </div>
+                <NoImageFallback size="md" fill={false} />
               ) : (
                 <Image
                   src={src}
@@ -122,6 +115,26 @@ function ImageSlider({ images, title }: { images: string[]; title: string }) {
             />
           ))}
         </div>
+      )}
+
+      {/* Desktop navigation arrows — visible on hover */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={(e) => { e.preventDefault(); scrollBy('left'); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover/slider:opacity-100 transition-opacity hidden sm:flex items-center justify-center"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); scrollBy('right'); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover/slider:opacity-100 transition-opacity hidden sm:flex items-center justify-center"
+            aria-label="Next image"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </>
       )}
     </div>
   );
@@ -205,10 +218,7 @@ export default function PropertyCard({ property, fullWidthMobile = true }: Prope
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-              <Building2 className="w-16 h-16 text-muted-foreground/30" />
-              <span className="text-xs text-muted-foreground">Sin imagen</span>
-            </div>
+            <NoImageFallback size="md" />
           )}
 
           {/* Badge */}

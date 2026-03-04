@@ -8,7 +8,8 @@ import { getPropertyById, getProperties } from '@/lib/supabase/queries';
 import { allProperties as fallbackProperties } from '@/data/properties';
 import type { Property } from '@/data/properties';
 import { useLanguage, getPropertyTitle, getLocalizedField, getLocalizedArray } from '@/lib/i18n';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, filterImages } from '@/lib/utils';
+import NoImageFallback from '@/components/NoImageFallback';
 import { getPropertyHref } from '@/lib/seo';
 
 export default function PropertyDetailPage() {
@@ -20,6 +21,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [heroImgError, setHeroImgError] = useState(false);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
 
   // Fetch property from Supabase
@@ -219,16 +221,14 @@ export default function PropertyDetailPage() {
   const description = getLocalizedField(property, 'description', locale) || property.description;
   const features = getLocalizedArray(property, 'features', locale);
 
+  const images = filterImages(property.images ?? []);
+
   const nextImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === property.images.length - 1 ? 0 : prev + 1
-    );
+    setSelectedImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
   const prevImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === 0 ? property.images.length - 1 : prev - 1
-    );
+    setSelectedImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   // Calculate distance between two coordinates using Haversine formula
@@ -374,12 +374,16 @@ export default function PropertyDetailPage() {
         href={getPropertyHref(prop)}
         className="group w-full max-w-md md:max-w-none bg-card border border-border rounded-xl overflow-hidden hover:border-primary transition-all duration-300 hover-glow"
       >
-        <div className="relative h-48 overflow-hidden">
-          <img
-            src={prop.images[0]}
-            alt={cardTitle}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-          />
+        <div className="relative h-48 overflow-hidden bg-[rgb(25,20,20)]">
+          {filterImages(prop.images ?? [])[0] ? (
+            <img
+              src={filterImages(prop.images ?? [])[0]}
+              alt={cardTitle}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            />
+          ) : (
+            <NoImageFallback size="sm" />
+          )}
           {(prop.badge || badge) && (
             <div className="absolute top-3 left-3 px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
               {badge || prop.badge}
@@ -441,12 +445,17 @@ export default function PropertyDetailPage() {
         {/* Image Gallery */}
         <div className="mb-8">
           {/* Hero Image */}
-          <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden mb-4 group">
-            <img
-              src={property.images[selectedImageIndex]}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden mb-4 group bg-[rgb(25,20,20)]">
+            {images.length > 0 && !heroImgError ? (
+              <img
+                src={images[selectedImageIndex]}
+                alt={title}
+                className="w-full h-full object-cover"
+                onError={() => setHeroImgError(true)}
+              />
+            ) : (
+              <NoImageFallback size="lg" />
+            )}
             {property.badge && (
               <div className="absolute top-4 left-4 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-full">
                 {property.badge}
@@ -454,7 +463,7 @@ export default function PropertyDetailPage() {
             )}
 
             {/* Navigation Arrows - Only show if more than 1 image */}
-            {property.images.length > 1 && (
+            {images.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
@@ -473,32 +482,34 @@ export default function PropertyDetailPage() {
 
                 {/* Image counter */}
                 <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/70 text-white text-sm rounded-full">
-                  {selectedImageIndex + 1} / {property.images.length}
+                  {selectedImageIndex + 1} / {images.length}
                 </div>
               </>
             )}
           </div>
 
           {/* Thumbnail Row */}
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {property.images.map((image, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedImageIndex(index)}
-                className={`relative flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                  selectedImageIndex === index
-                    ? 'border-primary scale-105'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <img
-                  src={image}
-                  alt={`${title} - ${t.image} ${index + 1}`}
-                  className="w-full h-full object-cover hover:scale-110 transition-transform"
-                />
-              </button>
-            ))}
-          </div>
+          {images.length > 1 && (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={`relative flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all bg-[rgb(25,20,20)] ${
+                    selectedImageIndex === index
+                      ? 'border-primary scale-105'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`${title} - ${t.image} ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-110 transition-transform"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
